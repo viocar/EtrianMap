@@ -7,7 +7,6 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 using OriginTablets.Types;
 using System.IO;
 using System.Diagnostics;
-
 namespace EtrianMap
 {
     static class Program

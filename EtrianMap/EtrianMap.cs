@@ -18,16 +18,18 @@ namespace EtrianMap
     public partial class EtrianMap : Form
     {
         //Initial program setup.
-        Flags program_flags = new Flags();
+        Globals globals = new Globals();
         public EtrianMap(List<byte[]> binaries, List<Table> tables, List<MBM> mbms, List<MapDatCollection> mapdat_list)
         {
-            program_flags.sample_renderer_enabled = true;
+            globals.sample_renderer_enabled = true;
             InitializeComponent();
             int new_map = MapSelectDialog(mapdat_list);
             if (new_map > 0)
             {
-                program_flags.open_map = new_map;
-                BuildInitialMapData(mapdat_list[program_flags.open_map].sys_file, mapdat_list[program_flags.open_map].gfx_file);
+                globals.open_map = new_map;
+                globals.map_data = BuildInitialMapData(mapdat_list[globals.open_map].sys_file, mapdat_list[globals.open_map].gfx_file); //Change this to the MSBFile + MGBFile type later
+                globals.sample_renderer_enabled = false;
+                //MapRedraw();
             }
         }
 

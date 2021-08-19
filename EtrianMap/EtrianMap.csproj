@@ -64,7 +64,7 @@
     <Compile Include="DataHandler.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Definitions.cs" />
+    <Compile Include="Classes.cs" />
     <Compile Include="EtrianMap.cs">
       <SubType>Form</SubType>
     </Compile>

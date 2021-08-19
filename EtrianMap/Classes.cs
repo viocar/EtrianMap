@@ -14,6 +14,12 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace EtrianMap
 {
+    public class Globals
+    {
+        public bool sample_renderer_enabled = false; //Render the sample map.
+        public int open_map = -1;
+        public MSBFile map_data {get; set;}
+    }
     public class MapDatCollection
     {
         public string sys_filename { get; set; }
@@ -21,10 +27,11 @@ namespace EtrianMap
         public byte[] sys_file { get; set; }
         public byte[] gfx_file { get; set; }
     }
-    public class Flags
+    public class MSBFile
     {
-        public bool sample_renderer_enabled = false; //Render the sample map.
-        public int open_map = -1;
+        public MSBHeader header = new MSBHeader();
+        public List<List<MSBTileType>> tile_types = new List<List<MSBTileType>>(); //0x2C through the end
+        public List<MSBEncounter> encounters = new List<MSBEncounter>();
     }
     public class MSBHeader
     {
@@ -40,7 +47,6 @@ namespace EtrianMap
         public int encounter_pointer { get; set; } //0x20
         public const int _0x24 = 0;
         public const int _0x28 = 0;
-        public List<List<MSBTileType>> tile_types = new List<List<MSBTileType>>(); //0x2C through the end
     }
     public class MSBEncounter //20
     {
@@ -51,8 +57,8 @@ namespace EtrianMap
     }
     public class MSBTileType
     {
-        public ushort type { get; set; }
-        public ushort id { get; set; }
+        public byte type { get; set; }
+        public byte id { get; set; }
     }
     public class MGBPointers
     {
