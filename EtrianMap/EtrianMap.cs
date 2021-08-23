@@ -21,15 +21,19 @@ namespace EtrianMap
         Globals globals = new Globals();
         public EtrianMap(List<byte[]> binaries, List<Table> tables, List<MBM> mbms, List<MapDatCollection> mapdat_list)
         {
-            globals.sample_renderer_enabled = true;
-            InitializeComponent();
             int new_map = MapSelectDialog(mapdat_list);
-            if (new_map > 0)
+            InitializeComponent();
+            Debug.WriteLine(new_map);
+            if (new_map > -1)
             {
                 globals.open_map = new_map;
                 globals.map_data = BuildInitialMapData(mapdat_list[globals.open_map].sys_file, mapdat_list[globals.open_map].gfx_file); //Change this to the MSBFile + MGBFile type later
-                globals.sample_renderer_enabled = false;
-                //MapRedraw();
+                globals.map_area = new Rectangle(
+                    MapRender.LEFT_EDGE, 
+                    MapRender.TOP_EDGE, 
+                    (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS) * globals.map_data.header.map_x, 
+                    (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS) * globals.map_data.header.map_y
+                );
             }
         }
 
@@ -50,6 +54,36 @@ namespace EtrianMap
                 {
                     return -1;
                 }
+            }
+        }
+
+        private void EtrianMap_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void EtrianMap_MouseClick(object sender, MouseEventArgs e)
+        {
+            var mouse_pos = PointToClient(Cursor.Position);
+            if (globals.map_area.Contains(new Point(mouse_pos.X, mouse_pos.Y)))
+            {
+                if (ModifierKeys != Keys.Control)
+                {
+                    globals.selected_box.Clear();
+                    globals.selected_box_x.Clear();
+                    globals.selected_box_y.Clear();
+                }
+                int box_x = (mouse_pos.X - MapRender.LEFT_EDGE) / (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS);
+                int box_y = (mouse_pos.Y - MapRender.TOP_EDGE) / (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS);
+                globals.selected_box.Add(box_x + box_y * globals.map_data.header.map_x);
+                globals.selected_box_x.Add(box_x); //It's easier just to compute this now instead of trying to recompute it later when I need it again.
+                globals.selected_box_y.Add(box_y);
+                Debug.WriteLine(globals.map_data.encounters[box_x + box_y * globals.map_data.header.map_x].encounter_id);
+                Invalidate();
+            }
+            else
+            {
+                Debug.WriteLine("Not in map area");
             }
         }
     }

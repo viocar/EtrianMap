@@ -47,9 +47,12 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1184, 861);
             this.Controls.Add(this.Save);
+            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "EtrianMap";
             this.Text = "EtrianMap";
+            this.Click += new System.EventHandler(this.EtrianMap_Click);
+            this.MouseClick += new System.Windows.Forms.MouseEventHandler(this.EtrianMap_MouseClick);
             this.ResumeLayout(false);
 
         }

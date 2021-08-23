@@ -16,9 +16,12 @@ namespace EtrianMap
 {
     public class Globals
     {
-        public bool sample_renderer_enabled = false; //Render the sample map.
         public int open_map = -1;
-        public MSBFile map_data {get; set;}
+        public List<int> selected_box = new List<int>();
+        public List<int> selected_box_x = new List<int>();
+        public List<int> selected_box_y = new List<int>();
+        public Rectangle map_area = new Rectangle(); //Cannot be determined until the map is loaded.
+        public MSBFile map_data { get; set; }
     }
     public class MapDatCollection
     {

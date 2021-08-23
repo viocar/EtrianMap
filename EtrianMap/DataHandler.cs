@@ -23,6 +23,7 @@ namespace EtrianMap
         }
         public MSBFile BuildInitialMapData(byte[] sys, byte[] gfx)
         {
+            Debug.WriteLine("here1");
             MSBFile file = new MSBFile();
             MSBHeader header = new MSBHeader();
             header.map_x = BitConverter.ToInt32(sys, 0x8);
@@ -45,6 +46,16 @@ namespace EtrianMap
                     tile_type_entry.Add(tile);
                 }
                 file.tile_types.Add(tile_type_entry);
+            }
+            for (int x = 0; x < header.map_x * header.map_y; x++)
+            {
+                int ptr = header.encounter_pointer;
+                MSBEncounter enc = new MSBEncounter();
+                enc.encounter_id = BitConverter.ToUInt16(sys, ptr + (x * 8));
+                enc.danger = BitConverter.ToUInt16(sys, ptr + 2 + (x * 8));
+                enc.unknown_1 = BitConverter.ToUInt16(sys, ptr + 4 + (x * 8));
+                enc.unknown_2 = BitConverter.ToUInt16(sys, ptr + 6 + (x * 8));
+                file.encounters.Add(enc);
             }
             return file;
         }
