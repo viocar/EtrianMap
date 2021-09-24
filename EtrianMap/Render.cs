@@ -21,8 +21,8 @@ namespace EtrianMap
         public static Bitmap ICON_MAP_2 = new Bitmap(Bitmap.FromFile(Directory.GetParent(System.Environment.CurrentDirectory).Parent.FullName + "\\Graphics\\Graphics2.png"));
         public class MapRender
         {
-            public const int TOP_EDGE = 16;
-            public const int LEFT_EDGE = 16;
+            public const int TOP_EDGE = 39; //15 + menuStrip's height of 24
+            public const int LEFT_EDGE = 15;
             public const int BOX_WIDTH = 19;
             public const int BOX_HEIGHT = 19;
             public const int LINE_THICKNESS = 2;
@@ -209,7 +209,7 @@ namespace EtrianMap
                             MapRender.BOX_WIDTH,
                             MapRender.BOX_HEIGHT
                         );
-                        switch (globals.map_data.tile_types[0][x + (y * globals.map_data.header.map_x)].type)
+                        switch (globals.map_data.cell_tile_types[x + (y * globals.map_data.header.map_x)].type)
                         {
                             case 0x1:
                                 this_brush = MapRender.DrawingElements.Brushes.FLOOR;

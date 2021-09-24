@@ -33,12 +33,20 @@ namespace EtrianMap
     public class MSBFile
     {
         public MSBHeader header = new MSBHeader();
-        public List<List<MSBTileType>> tile_types = new List<List<MSBTileType>>(); //0x2C through the end
-        public List<MSBEncounter> encounters = new List<MSBEncounter>();
+        public List<MSBCellTileType> cell_tile_types = new List<MSBCellTileType>(); //0x2C through the end
+        public List<MSBCellEncounter> encounters = new List<MSBCellEncounter>();
+        public List<MSBTileTypeInfo> tile_data = new List<MSBTileTypeInfo>();
+        public List<MSBStaircase> staircases = new List<MSBStaircase>();
+        public List<MSBChest> chests = new List<MSBChest>();
+        public List<MSBTwoWayPassage> two_way_passages = new List<MSBTwoWayPassage>();
+        public List<MSBOneWayPassage> one_way_passages = new List<MSBOneWayPassage>();
+        public List<MSBDoodad> doodads = new List<MSBDoodad>();
+        public List<MSBSnake> snakes = new List<MSBSnake>();
+        public List<MSBScriptedEvent> scripted_events = new List<MSBScriptedEvent>();
+        public List<MSBRisingPlatform> rising_platforms = new List<MSBRisingPlatform>();
     }
     public class MSBHeader
     {
-        //Used in all maps. Rename when you understand what these are better.
         public const string magic = "DGMS"; //0x0
         public const int _0x4 = 1;
         public int map_x { get; set; } //0x8
@@ -48,34 +56,132 @@ namespace EtrianMap
         public int tile_type_count { get; set; } //0x18
         public int tile_type_pointer { get; set; } //0x1C
         public int encounter_pointer { get; set; } //0x20
-        public const int _0x24 = 0;
-        public const int _0x28 = 0;
+        public const int _0x24 = 0; //Never used
+        public const int _0x28 = 0; //Never used
     }
-    public class MSBEncounter //20
+    public class MSBCellEncounter //20
     {
         public ushort encounter_id { get; set; }
         public ushort danger { get; set; }
         public ushort unknown_1 { get; set; } //Used very rarely and only ever has a value of 1 if used.
         public ushort unknown_2 { get; set; } //Never used.
     }
-    public class MSBTileType
+    public class MSBCellTileType
     {
         public byte type { get; set; }
         public byte id { get; set; }
     }
-    public class MGBPointers
+    public class MSBTileTypeInfo
     {
-        public int p_70 { get; set; }
-        public int p_74 { get; set; }
-        public int p_78 { get; set; }
-        public int p_7C { get; set; }
-        public int p_80 { get; set; }
-        public int p_84 { get; set; }
-        public int p_88 { get; set; }
-        //Used in Nexus only.
-        public int p_8C { get; set; }
-        public int p_90 { get; set; }
-        public int p_94 { get; set; }
+        public uint index { get; set; }
+        public uint entries { get; set; }
+        public uint entry_ptr { get; set; }
+        public uint data_ptr { get; set; }
+        public uint data_length { get; set; }
+    }
+    public class MSBStaircase
+    {
+        public byte dest_floor { get; set; }
+        public byte dest_x { get; set; }
+        public byte dest_y { get; set; }
+        public byte dest_facing { get; set; }
+        public byte sfx { get; set; }
+        public byte interact_message { get; set; }
+        public byte unknown_1 { get; set; }
+        public byte unknown_2 { get; set; }
+    }
+    public class MSBChest
+    {
+        public byte is_item { get; set; } //Technically, this is a bool, but setting it as byte makes it easier for the data handlers. This might actually be an int...
+        public byte unknown_1 { get; set; }
+        public byte unknown_2 { get; set; }
+        public byte unknown_3 { get; set; }
+        public uint value { get; set; }
+    }
+    public class MSBTwoWayPassage //These values are never used in EON, but they are used in EO5's 6th stratum. I can't tell what for.
+    {
+        public byte unknown_1 { get; set; }
+        public byte unknown_2 { get; set; }
+        public byte unknown_3 { get; set; }
+        public byte unknown_4 { get; set; }
+    }
+    public class MSBOneWayPassage
+    {
+        public byte unknown_1 { get; set; }
+        public byte unknown_2 { get; set; }
+        public byte unknown_3 { get; set; }
+        public byte unknown_4 { get; set; }
+    }
+    public class MSBDoodad
+    {
+        public byte id { get; set; }
+        public byte unknown_1 { get; set; }
+        public byte unknown_2 { get; set; }
+        public byte unknown_3 { get; set; }
+        public byte id_2 { get; set; }
+        public byte unknown_1_2 { get; set; }
+        public byte unknown_2_2 { get; set; }
+        public byte unknown_3_2 { get; set; }
+        public byte id_3 { get; set; }
+        public byte unknown_1_3 { get; set; }
+        public byte unknown_2_3 { get; set; }
+        public byte unknown_3_3 { get; set; }
+        public byte id_4 { get; set; }
+        public byte unknown_1_4 { get; set; }
+        public byte unknown_2_4 { get; set; }
+        public byte unknown_3_4 { get; set; }
+    }
+    public class MSBPit
+    {
+        //Pits are never used in the base game OR in EO5, so I'm not sure what data is expected
+    }
+    public class MSBSnake
+    {
+        public byte snake_id { get; set; }
+        public byte unknown_1 { get; set; }
+        public byte position { get; set; }
+        public byte unknown_2 { get; set; }
+    }
+    public class MSBScriptedEvent //The format for this is different in EO5
+    {
+        public ushort flag_1 { get; set; }
+        public ushort flag_2 { get; set; }
+        public ushort flag_3 { get; set; }
+        public ushort required_flag { get; set; }
+        public byte unknown_1 { get; set; }
+        public byte unknown_2 { get; set; }
+        public byte unknown_3 { get; set; }
+        public byte unknown_4 { get; set; }
+        public byte unknown_5 { get; set; }
+        public byte unknown_6 { get; set; }
+        public byte unknown_7 { get; set; }
+        public byte unknown_8 { get; set; }
+        private string p_script_name;
+        public string script_name
+        {
+            get
+            {
+                return p_script_name;
+            }
+            set
+            {
+                if (value.Length > 0x24)
+                {
+                    p_script_name = value.Substring(0, 0x24);
+                }
+                else
+                {
+                    p_script_name = value;
+                }
+            }
+        }
+    }
+    public class MSBRisingPlatform
+    {
+        public byte id { get; set; }
+        public byte unknown_1 { get; set; }
+        public byte unknown_2 { get; set; }
+        public byte unknown_3 { get; set;  }
     }
     public class MGBLayer
     {
