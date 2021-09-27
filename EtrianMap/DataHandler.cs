@@ -213,7 +213,6 @@ namespace EtrianMap
 
                 //We need to know how big the file will be. While most things are constant, there is some variability.
                 int header_size = 0x2C; //Technically, this should be const, but I'm going to leave it as-is for consistency.
-                int garbage_size = 0x68; //Same as header size...
                 int behaviour_ptr_size = behaviours * 0x4; //Number of behaviour pointers
                 int total_behaviour_size = behaviours * map.header.map_x * map.header.map_y * 0x2; //Number of tile behaviours in the file
                 int tile_type_count_size = map.header.tile_type_count * 0x14; //Number of tile types for the tile type data section
@@ -223,10 +222,11 @@ namespace EtrianMap
                     tile_type_data_size = tile_type_data_size + (int)(tile.entries * 0x1C); //Object entry
                     tile_type_data_size = tile_type_data_size + (int)(tile.entries * tile.data_length); //Data entry
                 }
+                int garbage_size = 0x68; //Same as header size...
                 int encounter_size = map.header.map_x * map.header.map_y * 0x8; //Number of tile encounters in the file
                 int size = behaviour_ptr_size + total_behaviour_size + tile_type_count_size + tile_type_data_size + encounter_size + header_size + garbage_size; //Add all sizes together.
                 byte[] save_byte = new byte[size];
-                Debug.WriteLine(Convert.ToString(size, 16));
+                //Debug.WriteLine(Convert.ToString(size, 16));
 
                 //Create arrays for data. We could just write it all directly into save_byte, but this intermediate step makes it easier with different data sizes.
                 int[] header = new int[header_size / 4];
@@ -375,6 +375,8 @@ namespace EtrianMap
                 }
 
                 //Create the tile data header. This needs to be done after all the data is written so we know where our pointers go.
+                int rolling_entry_ptr = header_size + behaviour_ptr_size + total_behaviour_size + tile_type_count_size + garbage_size;
+                Debug.WriteLine(rolling_entry_ptr);
                 for (int x = 0; x < tile_type_info_count; x++)
                 {
                     BitConverter.GetBytes(map.tile_data[x].index).CopyTo(tile_type_data_bytes, x * 0x14);
