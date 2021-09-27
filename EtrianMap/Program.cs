@@ -22,6 +22,7 @@ namespace EtrianMap
             List<MapDatCollection> mapdat_list = new List<MapDatCollection>();
             List<Table> tables = new List<Table>();
             List<MBM> mbms = new List<MBM>(); //Might not need this if we're only loading one MBM.
+            string open_path = "";
             Application.EnableVisualStyles();
             //Load all the files we need. Is it bad form to do it this way, rather than just-in-time? They're so small that it probably won't matter...
             using (var openDialog = new CommonOpenFileDialog())
@@ -31,16 +32,18 @@ namespace EtrianMap
                 openDialog.Title = "Select your main Etrian Odyssey Nexus directory";
                 if (openDialog.ShowDialog() == CommonFileDialogResult.Ok)
                 {
-                    string enemynametable = openDialog.FileName + "\\Monster\\Table\\enemynametable.tbl";
-                    string useitemnametable = openDialog.FileName + "\\Item\\useitemnametable.tbl";
-                    string equipitemnametable = openDialog.FileName + "\\Item\\equipitemnametable.tbl";
-                    string dungeonname = openDialog.FileName + "\\InterfaceFile\\dungeonname.mbm";
-                    string encount = openDialog.FileName + "\\Dungeon\\encount.tbl";
-                    string encount_group = openDialog.FileName + "\\Dungeon\\encount_group.tbl";
-                    string floor = openDialog.FileName + "\\Dungeon\\floor.tbl";
-                    string mapdat = openDialog.FileName + "\\MapDat\\";
+                    open_path = openDialog.FileName;
+                    Properties.Settings.Default.LastPath = open_path;
+                    string enemynametable = open_path + "\\Monster\\Table\\enemynametable.tbl";
+                    string useitemnametable = open_path + "\\Item\\useitemnametable.tbl";
+                    string equipitemnametable = open_path + "\\Item\\equipitemnametable.tbl";
+                    string dungeonname = open_path + "\\InterfaceFile\\dungeonname.mbm";
+                    string encount = open_path + "\\Dungeon\\encount.tbl";
+                    string encount_group = open_path + "\\Dungeon\\encount_group.tbl";
+                    string floor = open_path + "\\Dungeon\\floor.tbl";
+                    string mapdat = open_path + "\\MapDat\\";
                     if (File.Exists(enemynametable) && File.Exists(encount) && File.Exists(encount_group) && File.Exists(floor) && File.Exists(dungeonname) && File.Exists(useitemnametable)
-                        && File.Exists(equipitemnametable) && File.Exists(mapdat + "\\sys01.msb") && File.Exists(mapdat + "\\gfx01.mgb"))
+                        && File.Exists(equipitemnametable) && File.Exists(mapdat + "\\sys01.msb") && File.Exists(mapdat + "\\gfx01.mgb")) //Get a more robust way of making sure map files exist.
                     {
                         int encount_length = (int)(new FileInfo(encount).Length);
                         int encount_group_length = (int)(new FileInfo(encount_group).Length);
@@ -106,6 +109,7 @@ namespace EtrianMap
                                 mapdat_list.Add(entry); //This feels slightly weird...
                             }
                         }
+
                     }
                     else
                     {
@@ -120,7 +124,7 @@ namespace EtrianMap
                 }
             }
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new EtrianMap(binaries, tables, mbms, mapdat_list));
+            Application.Run(new EtrianMap(binaries, tables, mbms, mapdat_list, open_path)); //Everything we need to pass to the program, since certain things are not initialized yet.
         }
     }
 }

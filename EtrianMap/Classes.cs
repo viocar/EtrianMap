@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Collections;
 using System.Diagnostics;
 using System.Drawing.Imaging;
+using OriginTablets.Types;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace EtrianMap
@@ -21,6 +22,11 @@ namespace EtrianMap
         public List<int> selected_box_x = new List<int>();
         public List<int> selected_box_y = new List<int>();
         public Rectangle map_area = new Rectangle(); //Cannot be determined until the map is loaded.
+        public List<byte[]> binaries = new List<byte[]>();
+        public List<Table> tables = new List<Table>();
+        public List<MBM> mbms = new List<MBM>();
+        public List<MapDatCollection> mapdat_list = new List<MapDatCollection>(); 
+        public string open_path = ""; //Initialized when a file is loaded.
         public MSBFile map_data { get; set; }
     }
     public class MapDatCollection
@@ -33,7 +39,7 @@ namespace EtrianMap
     public class MSBFile
     {
         public MSBHeader header = new MSBHeader();
-        public List<MSBCellTileType> cell_tile_types = new List<MSBCellTileType>(); //0x2C through the end
+        public List<List<MSBBehaviours>> behaviour_tiles = new List<List<MSBBehaviours>>(); //0x2C through the end
         public List<MSBCellEncounter> encounters = new List<MSBCellEncounter>();
         public List<MSBTileTypeInfo> tile_data = new List<MSBTileTypeInfo>();
         public List<MSBStaircase> staircases = new List<MSBStaircase>();
@@ -42,12 +48,13 @@ namespace EtrianMap
         public List<MSBOneWayPassage> one_way_passages = new List<MSBOneWayPassage>();
         public List<MSBDoodad> doodads = new List<MSBDoodad>();
         public List<MSBSnake> snakes = new List<MSBSnake>();
-        public List<MSBScriptedEvent> scripted_events = new List<MSBScriptedEvent>();
+        public List<MSBScript> scripted_events = new List<MSBScript>();
         public List<MSBRisingPlatform> rising_platforms = new List<MSBRisingPlatform>();
+        public byte[] garbage = new byte[0x68];
     }
     public class MSBHeader
     {
-        public const string magic = "DGMS"; //0x0
+        public const int MAGIC = 0x534D4744; //0x0, "DGMS"
         public const int _0x4 = 1;
         public int map_x { get; set; } //0x8
         public int map_y { get; set; } //0xC
@@ -66,7 +73,7 @@ namespace EtrianMap
         public ushort unknown_1 { get; set; } //Used very rarely and only ever has a value of 1 if used.
         public ushort unknown_2 { get; set; } //Never used.
     }
-    public class MSBCellTileType
+    public class MSBBehaviours
     {
         public byte type { get; set; }
         public byte id { get; set; }
@@ -114,10 +121,10 @@ namespace EtrianMap
     }
     public class MSBDoodad
     {
-        public byte id { get; set; }
-        public byte unknown_1 { get; set; }
-        public byte unknown_2 { get; set; }
-        public byte unknown_3 { get; set; }
+        public byte id_1 { get; set; }
+        public byte unknown_1_1 { get; set; }
+        public byte unknown_2_1 { get; set; }
+        public byte unknown_3_1 { get; set; }
         public byte id_2 { get; set; }
         public byte unknown_1_2 { get; set; }
         public byte unknown_2_2 { get; set; }
@@ -137,12 +144,12 @@ namespace EtrianMap
     }
     public class MSBSnake
     {
-        public byte snake_id { get; set; }
+        public byte id { get; set; }
         public byte unknown_1 { get; set; }
-        public byte position { get; set; }
+        public byte position { get; set; } //This is which position within the snake it is
         public byte unknown_2 { get; set; }
     }
-    public class MSBScriptedEvent //The format for this is different in EO5
+    public class MSBScript //The format for this is different in EO5
     {
         public ushort flag_1 { get; set; }
         public ushort flag_2 { get; set; }
@@ -156,6 +163,10 @@ namespace EtrianMap
         public byte unknown_6 { get; set; }
         public byte unknown_7 { get; set; }
         public byte unknown_8 { get; set; }
+        public byte prompt { get; set; }
+        public byte unknown_9 { get; set; }
+        public ushort unknown_10 { get; set; } //This is probably the proc() used
+
         private string p_script_name;
         public string script_name
         {
@@ -165,9 +176,9 @@ namespace EtrianMap
             }
             set
             {
-                if (value.Length > 0x24)
+                if (value.Length > 0x18)
                 {
-                    p_script_name = value.Substring(0, 0x24);
+                    p_script_name = value.Substring(0, 0x18); //Note: When saving, be sure to PadRight this with .PadRight(0x18, '\x0')
                 }
                 else
                 {

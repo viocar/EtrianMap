@@ -209,7 +209,7 @@ namespace EtrianMap
                             MapRender.BOX_WIDTH,
                             MapRender.BOX_HEIGHT
                         );
-                        switch (globals.map_data.cell_tile_types[x + (y * globals.map_data.header.map_x)].type)
+                        switch (globals.map_data.behaviour_tiles[0][x + (y * globals.map_data.header.map_x)].type) //This really should not render just 0...
                         {
                             case 0x1:
                                 this_brush = MapRender.DrawingElements.Brushes.FLOOR;
@@ -236,6 +236,11 @@ namespace EtrianMap
                                 break;
                             case 0x10:
                                 this_bitmap = MapRender.Icons.Graphics1.ARROW_UP_DOWN; //Same as 0xE
+                                int tile_to_left = globals.map_data.behaviour_tiles[0][x - 1 + (y * globals.map_data.header.map_x)].type; //Check the cell to the left to see if it's walkable. This is a bit of a hack to get the orientation, but it seems solid.
+                                if (tile_to_left == 0x1 || tile_to_left == 0x2 || tile_to_left == 0x3 || tile_to_left == 0x9 || tile_to_left == 0xC) 
+                                {
+                                    this_bitmap = MapRender.Icons.Graphics1.ARROW_LEFT_RIGHT;
+                                }
                                 draw_bitmap = true;
                                 break;
                             case 0x11:

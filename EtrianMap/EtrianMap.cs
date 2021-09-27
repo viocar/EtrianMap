@@ -19,15 +19,19 @@ namespace EtrianMap
     {
         //Initial program setup.
         Globals globals = new Globals();
-        public EtrianMap(List<byte[]> binaries, List<Table> tables, List<MBM> mbms, List<MapDatCollection> mapdat_list)
+        public EtrianMap(List<byte[]> binaries, List<Table> tables, List<MBM> mbms, List<MapDatCollection> mapdat_list, string open_path)
         {
-            int new_map = MapSelectDialog(mapdat_list);
+            int open_map = MapSelectDialog(mapdat_list);
             InitializeComponent();
-            Debug.WriteLine(new_map);
-            if (new_map > -1)
+            if (open_map > -1)
             {
-                globals.open_map = new_map;
-                globals.map_data = BuildInitialMapData(mapdat_list[globals.open_map].sys_file, mapdat_list[globals.open_map].gfx_file); //Change this to the MSBFile + MGBFile type later
+                globals.binaries = binaries;
+                globals.tables = tables;
+                globals.mbms = mbms;
+                globals.mapdat_list = mapdat_list;
+                globals.open_path = open_path;
+                globals.open_map = open_map;
+                globals.map_data = BuildInitialMapData();
                 globals.map_area = new Rectangle(
                     MapRender.LEFT_EDGE, 
                     MapRender.TOP_EDGE, 
