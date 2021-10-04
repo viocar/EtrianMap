@@ -195,73 +195,107 @@ namespace EtrianMap
             {
                 System.Diagnostics.Stopwatch timer = new Stopwatch();
                 timer.Start();
-                for (int x = 0; x < globals.map_data.header.map_x; x++) //Draw boxes.
+                for (int x = 0; x < globals.sys_data.header.map_x; x++) //Draw boxes.
                 {
-                    for (int y = 0; y < globals.map_data.header.map_y; y++)
+                    for (int y = 0; y < globals.sys_data.header.map_y; y++)
                     {
-                        SolidBrush this_brush = MapRender.DrawingElements.Brushes.BACKGROUND;
-                        Bitmap this_bitmap = MapRender.Icons.Graphics1.BLANK_1;
-                        bool draw_bitmap = false; //No sense in drawing a blank if we don't have to.
-                        Rectangle pos = new Rectangle
-                        (
-                            MapRender.LEFT_EDGE + (x * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)),
-                            MapRender.TOP_EDGE + (y * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)),
-                            MapRender.BOX_WIDTH,
-                            MapRender.BOX_HEIGHT
-                        );
-                        switch (globals.map_data.behaviour_tiles[0][x + (y * globals.map_data.header.map_x)].type) //This really should not render just 0...
+                        for (int z = 0; z < globals.sys_data.header.behaviour_count; z++)
                         {
-                            case 0x1:
-                                this_brush = MapRender.DrawingElements.Brushes.FLOOR;
-                                break;
-                            case 0x2:
-                                this_brush = MapRender.DrawingElements.Brushes.DAMAGE;
-                                break;
-                            case 0x3:
-                                this_brush = MapRender.DrawingElements.Brushes.ICE;
-                                break;
-                            case 0x9:
-                                this_brush = MapRender.DrawingElements.Brushes.MUD;
-                                break;
-                            case 0xC:
-                                this_brush = MapRender.DrawingElements.Brushes.HIGH_FLOOR;
-                                break;
-                            case 0xD:
-                                this_bitmap = MapRender.Icons.Graphics1.DOOR;
-                                draw_bitmap = true;
-                                break;
-                            case 0xE:
-                                this_bitmap = MapRender.Icons.Graphics1.STAIRS_UP; //Fix this code when you have details on which way the stairs go.
-                                draw_bitmap = true;
-                                break;
-                            case 0x10:
-                                this_bitmap = MapRender.Icons.Graphics1.ARROW_UP_DOWN; //Same as 0xE
-                                int tile_to_left = globals.map_data.behaviour_tiles[0][x - 1 + (y * globals.map_data.header.map_x)].type; //Check the cell to the left to see if it's walkable. This is a bit of a hack to get the orientation, but it seems solid.
-                                if (tile_to_left == 0x1 || tile_to_left == 0x2 || tile_to_left == 0x3 || tile_to_left == 0x9 || tile_to_left == 0xC) 
-                                {
-                                    this_bitmap = MapRender.Icons.Graphics1.ARROW_LEFT_RIGHT;
-                                }
-                                draw_bitmap = true;
-                                break;
-                            case 0x11:
-                                this_bitmap = MapRender.Icons.Graphics1.ARROW_UP; //Same as 0xE
-                                draw_bitmap = true;
-                                break;
-                            case 0x14:
-                                this_bitmap = MapRender.Icons.Graphics1.GEOMAGNETIC_POLE;
-                                draw_bitmap = true;
-                                break;
-                            default:
-                                break;
-                        }
-                        e.Graphics.FillRectangle(this_brush, pos);
-                        if (draw_bitmap)
-                        {
-                            e.Graphics.DrawImage(this_bitmap, pos.X, pos.Y);
+                            SolidBrush this_brush = MapRender.DrawingElements.Brushes.BACKGROUND;
+                            Bitmap this_bitmap = MapRender.Icons.Graphics1.BLANK_1;
+                            bool draw_bitmap = false; //No sense in drawing a blank if we don't have to.
+                            Rectangle pos = new Rectangle
+                            (
+                                MapRender.LEFT_EDGE + (x * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)),
+                                MapRender.TOP_EDGE + (y * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)),
+                                MapRender.BOX_WIDTH,
+                                MapRender.BOX_HEIGHT
+                            );
+                            switch (globals.sys_data.behaviour_tiles[z][x + (y * globals.sys_data.header.map_x)].type) //This really should not render just 0...
+                            {
+                                case 0x1:
+                                    this_brush = MapRender.DrawingElements.Brushes.FLOOR;
+                                    break;
+                                case 0x2:
+                                    this_brush = MapRender.DrawingElements.Brushes.DAMAGE;
+                                    break;
+                                case 0x3:
+                                    this_brush = MapRender.DrawingElements.Brushes.ICE;
+                                    break;
+                                case 0x5:
+                                    this_brush = MapRender.DrawingElements.Brushes.FLOOR;
+                                    this_bitmap = MapRender.Icons.Graphics1.ARROW_UP_YELLOW;
+                                    draw_bitmap = true;
+                                    break;
+                                case 0x6:
+                                    this_brush = MapRender.DrawingElements.Brushes.FLOOR;
+                                    this_bitmap = MapRender.Icons.Graphics1.ARROW_DOWN_YELLOW;
+                                    draw_bitmap = true;
+                                    break;
+                                case 0x7:
+                                    this_brush = MapRender.DrawingElements.Brushes.FLOOR;
+                                    this_bitmap = MapRender.Icons.Graphics1.ARROW_LEFT_YELLOW;
+                                    draw_bitmap = true;
+                                    break;
+                                case 0x8:
+                                    this_brush = MapRender.DrawingElements.Brushes.FLOOR;
+                                    this_bitmap = MapRender.Icons.Graphics1.ARROW_RIGHT_YELLOW;
+                                    draw_bitmap = true;
+                                    break;
+                                case 0x9:
+                                    this_brush = MapRender.DrawingElements.Brushes.MUD;
+                                    break;
+                                case 0xC:
+                                    this_brush = MapRender.DrawingElements.Brushes.HIGH_FLOOR;
+                                    break;
+                                case 0xD:
+                                    this_bitmap = MapRender.Icons.Graphics1.DOOR;
+                                    draw_bitmap = true;
+                                    break;
+                                case 0xE:
+                                    this_bitmap = MapRender.Icons.Graphics1.STAIRS_UP; //Fix this code when you have details on which way the stairs go.
+                                    draw_bitmap = true;
+                                    break;
+                                case 0x10:
+                                    this_bitmap = MapRender.Icons.Graphics1.ARROW_UP_DOWN; //Same as 0xE
+                                    int tile_to_left = globals.sys_data.behaviour_tiles[0][x - 1 + (y * globals.sys_data.header.map_x)].type; //Check the cell to the left to see if it's walkable. This is a bit of a hack to get the orientation, but it seems solid.
+                                    if (tile_to_left == 0x1 || tile_to_left == 0x2 || tile_to_left == 0x3 || tile_to_left == 0x9 || tile_to_left == 0xC)
+                                    {
+                                        this_bitmap = MapRender.Icons.Graphics1.ARROW_LEFT_RIGHT;
+                                    }
+                                    draw_bitmap = true;
+                                    break;
+                                case 0x11:
+                                    this_bitmap = MapRender.Icons.Graphics1.ARROW_UP; //Same as 0xE
+                                    draw_bitmap = true;
+                                    break;
+                                case 0x12:
+                                    
+                                case 0x14:
+                                    this_bitmap = MapRender.Icons.Graphics1.GEOMAGNETIC_POLE;
+                                    draw_bitmap = true;
+                                    break;
+                                case 0x16: //Figure out how the data for this one works.
+                                    break;
+                                case 0x17: //And this...
+                                    break;
+                                case 0x18: //Scripted events don't use a tile type.
+                                    break;
+                                default:
+                                    break;
+                            }
+                            if (z == 0 || (z > 0 && this_brush != MapRender.DrawingElements.Brushes.BACKGROUND)) //We want background tiles on layer 0 only.
+                            {
+                                e.Graphics.FillRectangle(this_brush, pos);
+                            }
+                            if (draw_bitmap)
+                            {
+                                e.Graphics.DrawImage(this_bitmap, pos.X, pos.Y);
+                            }
                         }
                     }
                 }
-                for (int x = 0; x < globals.map_data.header.map_x + 1; x++) //Draw vertical lines. The line code and the box code have to be separated or else it renders awkwardly due to ordering.
+                for (int x = 0; x < globals.sys_data.header.map_x + 1; x++) //Draw vertical lines. The line code and the box code have to be separated or else it renders awkwardly due to ordering.
                 {
                     Pen line = MapRender.DrawingElements.Pens.THIN_LINE;
                     if ((x + 4) % 5 == 4)
@@ -277,11 +311,11 @@ namespace EtrianMap
                         new PointF
                         (
                             MapRender.LEFT_EDGE + (x * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)) - 1,
-                            MapRender.TOP_EDGE + (globals.map_data.header.map_y * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)) - 1
+                            MapRender.TOP_EDGE + (globals.sys_data.header.map_y * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)) - 1
                         )
                     );
                 }
-                for (int y = 0; y < globals.map_data.header.map_y + 1; y++) //Draw horizontal lines.
+                for (int y = 0; y < globals.sys_data.header.map_y + 1; y++) //Draw horizontal lines.
                 {
                     Pen line = MapRender.DrawingElements.Pens.THIN_LINE;
                     line = MapRender.DrawingElements.Pens.THIN_LINE;
@@ -297,7 +331,7 @@ namespace EtrianMap
                         ),
                         new PointF
                         (
-                            MapRender.LEFT_EDGE + (globals.map_data.header.map_x * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)) - 1,
+                            MapRender.LEFT_EDGE + (globals.sys_data.header.map_x * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)) - 1,
                             MapRender.TOP_EDGE + (y * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)) - 1
                         )
                     );

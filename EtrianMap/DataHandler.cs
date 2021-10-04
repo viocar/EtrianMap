@@ -22,8 +22,9 @@ namespace EtrianMap
         {
             //Initial variable setup for easy access.
             byte[] sys = globals.mapdat_list[globals.open_map].sys_file;
-            byte[] gfx = globals.mapdat_list[globals.open_map].gfx_file;
             MSBFile file = new MSBFile();
+
+            //Create the header.
             MSBHeader header = new MSBHeader();
             header.map_x = BitConverter.ToInt32(sys, 0x8);
             header.map_y = BitConverter.ToInt32(sys, 0xC);
@@ -34,6 +35,18 @@ namespace EtrianMap
             header.encounter_pointer = BitConverter.ToInt32(sys, 0x20);
             file.header = header;
 
+            //Now that we have the data in the header, we're going to create an entry for each tile so that we can track what is on which tile.
+            for (int x = 0; x < header.map_x * header.map_y; x++)
+            {
+                MSBTileContainer container = new MSBTileContainer();
+                for (int y = 0; y < header.behaviour_count; y++)
+                {
+                    bool tile = false;
+                    container.behaviour.Add(tile);
+                }
+                file.containers.Add(container);
+            }
+
             //Get all the behaviours.
             for (int x = 0; x < header.behaviour_count; x++) 
             {
@@ -43,13 +56,17 @@ namespace EtrianMap
                 {
                     MSBBehaviours tile = new MSBBehaviours();
                     tile.type = sys[ptr + (y * 2)];
-                    tile.id = sys[ptr + ((y * 2) + 1)];
+                    tile.id = sys[ptr + (y * 2) + 1];
                     section.Add(tile);
+                    if (tile.type != 0 && tile.type != 0xA)
+                    {
+                        file.containers[y].behaviour[x] = true;
+                    }
                 }
                 file.behaviour_tiles.Add(section);
             }
 
-            //Get all the object data.
+            //Get all the tile type info data.
             for (int x = 0; x < header.tile_type_count; x++)
             {
                 int ptr = header.tile_type_pointer;
@@ -60,6 +77,75 @@ namespace EtrianMap
                 tile.data_ptr = BitConverter.ToUInt32(sys, ptr + 0xC + (x * 0x14));
                 tile.data_length = BitConverter.ToUInt32(sys, ptr + 0x10 + (x * 0x14));
                 file.tile_data.Add(tile);
+            }
+
+            //Get the tile type objects.
+            foreach (MSBTileTypeInfo tile in file.tile_data) //This and the next section could be merged, but I'm keeping them separate for readability.
+            {
+                if (tile.entries > 0)
+                {
+                    for (int y = 0; y < tile.entries; y++)
+                    {
+                        MSBTileTypeObject obj = new MSBTileTypeObject();
+                        obj.type = sys[tile.entry_ptr + y * 0x1C];
+                        obj.id = sys[tile.entry_ptr + y * 0x1C + 1];
+                        obj.graphic = sys[tile.entry_ptr + y * 0x1C + 2];
+                        obj.unknown_1 = sys[tile.entry_ptr + y * 0x1C + 3];
+                        obj.unknown_2 = sys[tile.entry_ptr + y * 0x1C + 4];
+                        obj.map_x = sys[tile.entry_ptr + y * 0x1C + 5];
+                        obj.map_y = sys[tile.entry_ptr + y * 0x1C + 6];
+                        obj.unknown_3 = sys[tile.entry_ptr + y * 0x1C + 7];
+                        obj.activation_direction_1 = sys[tile.entry_ptr + y * 0x1C + 8];
+                        obj.activation_direction_2 = sys[tile.entry_ptr + y * 0x1C + 9];
+                        obj.activation_direction_3 = sys[tile.entry_ptr + y * 0x1C + 0xA];
+                        obj.activation_direction_4 = sys[tile.entry_ptr + y * 0x1C + 0xB];
+                        //This is 0x1C long! C# is just weird about consts in classes. Be careful with the indexing code later on.
+                        file.tile_objects.Add(obj);
+                        switch (obj.type)
+                        {
+                            case 0xD:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].doors = file.containers[obj.map_x + obj.map_y * header.map_y].doors++;
+                                break;
+                            case 0xE:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].stairs = file.containers[obj.map_x + obj.map_y * header.map_y].stairs++;
+                                break;
+                            case 0xF:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].chests = file.containers[obj.map_x + obj.map_y * header.map_y].chests++;
+                                break;
+                            case 0x10:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].two_ways= file.containers[obj.map_x + obj.map_y * header.map_y].two_ways++;
+                                break;
+                            case 0x11:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].one_ways = file.containers[obj.map_x + obj.map_y * header.map_y].one_ways++;
+                                break;
+                            case 0x12:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].doodads = file.containers[obj.map_x + obj.map_y * header.map_y].doodads++;
+                                break;
+                            case 0x13:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].pits = file.containers[obj.map_x + obj.map_y * header.map_y].pits++;
+                                break;
+                            case 0x14:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].poles = file.containers[obj.map_x + obj.map_y * header.map_y].poles++;
+                                break;
+                            case 0x15:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].unknown = file.containers[obj.map_x + obj.map_y * header.map_y].unknown++;
+                                break;
+                            case 0x16:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].currents = file.containers[obj.map_x + obj.map_y * header.map_y].currents++;
+                                break;
+                            case 0x17:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].snakes = file.containers[obj.map_x + obj.map_y * header.map_y].snakes++;
+                                break;
+                            case 0x18:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].scripts = file.containers[obj.map_x + obj.map_y * header.map_y].scripts++;
+                                break;
+                            case 0x19:
+                                file.containers[obj.map_x + obj.map_y * header.map_y].risers = file.containers[obj.map_x + obj.map_y * header.map_y].risers++;
+                                break;
+
+                        }
+                    }
+                }
             }
 
             //Get all the tile data. This is fairly involved.
@@ -194,12 +280,84 @@ namespace EtrianMap
             }
             return file;
         }
+        private MGBFile BuildInitialGfxData()
+        {
+            //Initial setup.
+            byte[] gfx = globals.mapdat_list[globals.open_map].gfx_file;
+            MGBFile file = new MGBFile();
+
+            //Create header.
+            MGBHeader header = new MGBHeader();
+            header.map_x = BitConverter.ToInt32(gfx, 0x8);
+            header.map_y = BitConverter.ToInt32(gfx, 0xC);
+            header.layer_count = BitConverter.ToInt32(gfx, 0x10);
+            header.layer_pointer = BitConverter.ToInt32(gfx, 0x14);
+            header.filename_count = BitConverter.ToInt32(gfx, 0x18);
+            header.filename_pointer = BitConverter.ToInt32(gfx, 0x1C);
+            file.header = header;
+
+            //Populate all layers. 
+            for (int x = 0; x < header.layer_count; x++)
+            {
+                List<MGBTile> layer = new List<MGBTile>();
+                int ptr = BitConverter.ToInt32(gfx, header.layer_pointer + (x * 0x4));
+                for (int y = 0; y < (header.map_x * header.map_y); y++)
+                {
+                    MGBTile tile = new MGBTile();
+                    tile.id = gfx[ptr + (y * 4)];
+                    tile.rotation = gfx[ptr + ((y * 4) + 1)];
+                    tile.unknown_1 = gfx[ptr + ((y * 4) + 2)];
+                    tile.unknown_2 = gfx[ptr + ((y * 4) + 3)];
+                    layer.Add(tile);
+                }
+                file.layer_tiles.Add(layer);
+            }
+
+            //Add the filename section.
+            for (int x = 0; x < header.filename_count; x++)
+            {
+                MGBFileIndex index = new MGBFileIndex();
+                index.index = BitConverter.ToUInt32(gfx, header.filename_pointer + (x * 0x94));
+                byte[] str = new byte[0x80];
+                for (int y = 0; y < 4; y++)
+                {
+                    for (int z = 0; z < 0x20; z++)
+                    {
+                        str[(y * 0x20) + z] = gfx[header.filename_pointer + (x * 0x94) + 0x4 + z + (y * 0x20)];
+                    }
+                }
+                index.file_1 = Encoding.ASCII.GetString(str, 0, 0x20);
+                index.file_2 = Encoding.ASCII.GetString(str, 0x20, 0x20);
+                index.file_3 = Encoding.ASCII.GetString(str, 0x40, 0x20);
+                index.file_4 = Encoding.ASCII.GetString(str, 0x60, 0x20);
+                index.file_1_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x84];
+                index.file_2_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x85];
+                index.file_3_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x86];
+                index.file_4_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x87];
+                index.unknown_1 = gfx[header.filename_pointer + (x * 0x94) + 0x88];
+                index.unknown_2 = gfx[header.filename_pointer + (x * 0x94) + 0x89];
+                index.unknown_3 = gfx[header.filename_pointer + (x * 0x94) + 0x8A];
+                index.unknown_4 = gfx[header.filename_pointer + (x * 0x94) + 0x8B];
+                index.unknown_5 = gfx[header.filename_pointer + (x * 0x94) + 0x8C];
+                index.unknown_6 = gfx[header.filename_pointer + (x * 0x94) + 0x8D];
+                index.unknown_7 = gfx[header.filename_pointer + (x * 0x94) + 0x8E];
+                index.unknown_8 = gfx[header.filename_pointer + (x * 0x94) + 0x8F];
+                index.unknown_9 = gfx[header.filename_pointer + (x * 0x94) + 0x90];
+                index.unknown_10 = gfx[header.filename_pointer + (x * 0x94) + 0x91];
+                index.unknown_11 = gfx[header.filename_pointer + (x * 0x94) + 0x92];
+                index.unknown_12 = gfx[header.filename_pointer + (x * 0x94) + 0x93];
+                file.indices.Add(index);
+            }
+
+            return file;
+        }
         private void SaveFile()
         {
             //Initialize variables for easy use.
-            MSBFile map = globals.map_data;
-            string sys_path = globals.mapdat_list[globals.open_map].sys_filename;
-            string gfx_path = globals.mapdat_list[globals.open_map].gfx_filename;
+            MSBFile sys = globals.sys_data;
+            MGBFile gfx = globals.gfx_data;
+            string sys_path = globals.mapdat_list[globals.open_map].base_path + globals.mapdat_list[globals.open_map].sys_filename;
+            string gfx_path = globals.mapdat_list[globals.open_map].base_path + globals.mapdat_list[globals.open_map].gfx_filename;
             string dungeonname = globals.open_path + "\\InterfaceFile\\dungeonname.mbm";
             string encount = globals.open_path + "\\Dungeon\\encount.tbl";
             string encount_group = globals.open_path + "\\Dungeon\\encount_group.tbl";
@@ -207,184 +365,392 @@ namespace EtrianMap
             string mapdat = globals.open_path + "\\MapDat\\";
             if (File.Exists(encount) && File.Exists(encount_group) && File.Exists(floor) && File.Exists(dungeonname) && File.Exists(mapdat + "\\sys01.msb") && File.Exists(mapdat + "\\gfx01.mgb"))
             {
-                int behaviours = map.header.behaviour_count;
-                int tile_type_info_count = map.header.tile_type_count;
-                List<byte[]> cell_tile_types = new List<byte[]>();
+                //Start with the MSB.
+                int behaviours = sys.header.behaviour_count;
+                int tile_type_info_count = sys.header.tile_type_count;
 
                 //We need to know how big the file will be. While most things are constant, there is some variability.
-                int header_size = 0x2C; //Technically, this should be const, but I'm going to leave it as-is for consistency.
+                int sys_header_size = 0x2C; //Technically, this should be const, but I'm going to leave it as-is for consistency.
                 int behaviour_ptr_size = behaviours * 0x4; //Number of behaviour pointers
-                int total_behaviour_size = behaviours * map.header.map_x * map.header.map_y * 0x2; //Number of tile behaviours in the file
-                int tile_type_count_size = map.header.tile_type_count * 0x14; //Number of tile types for the tile type data section
+                int total_behaviour_size = behaviours * sys.header.map_x * sys.header.map_y * 0x2; //Number of tile behaviours in the file
+                int tile_type_count_size = sys.header.tile_type_count * 0x14; //Number of tile types for the tile type data section
                 int tile_type_data_size = 0;
-                foreach (MSBTileTypeInfo tile in map.tile_data) //Iterate through the tile type info to figure out how much space we need to allocate for those
+                foreach (MSBTileTypeInfo tile in sys.tile_data) //Iterate through the tile type info to figure out how much space we need to allocate for those
                 {
                     tile_type_data_size = tile_type_data_size + (int)(tile.entries * 0x1C); //Object entry
                     tile_type_data_size = tile_type_data_size + (int)(tile.entries * tile.data_length); //Data entry
                 }
                 int garbage_size = 0x68; //Same as header size...
-                int encounter_size = map.header.map_x * map.header.map_y * 0x8; //Number of tile encounters in the file
-                int size = behaviour_ptr_size + total_behaviour_size + tile_type_count_size + tile_type_data_size + encounter_size + header_size + garbage_size; //Add all sizes together.
-                byte[] save_byte = new byte[size];
-                //Debug.WriteLine(Convert.ToString(size, 16));
+                int encounter_size = sys.header.map_x * sys.header.map_y * 0x8; //Number of tile encounters in the file
+                int sys_size = behaviour_ptr_size + total_behaviour_size + tile_type_count_size + tile_type_data_size + encounter_size + sys_header_size + garbage_size; //Add all sizes together.
+                byte[] sys_save_byte = new byte[sys_size];
 
-                //Create arrays for data. We could just write it all directly into save_byte, but this intermediate step makes it easier with different data sizes.
-                int[] header = new int[header_size / 4];
+                //Create arrays for data. We could just write it all directly into sys_save_byte, but this intermediate step makes it easier with different data sizes.
+                int[] sys_header = new int[sys_header_size / 4];
                 int[] behaviour_pointers = new int[behaviours];
                 byte[] behaviour_bytes = new byte[total_behaviour_size]; //All the behaviours can be listed sequentially in here.
                 byte[] tile_type_data_bytes = new byte[tile_type_count_size];
-                byte[] staircase_bytes = new byte[map.staircases.Count * 8];
-                byte[] chest_bytes = new byte[map.chests.Count * 8];
-                byte[] two_way_bytes = new byte[map.two_way_passages.Count * 4];
-                byte[] one_way_bytes = new byte[map.one_way_passages.Count * 4];
-                byte[] doodad_bytes = new byte[map.doodads.Count * 4];
-                byte[] snake_bytes = new byte[map.snakes.Count * 4];
-                byte[] scripted_event_bytes = new byte[map.scripted_events.Count * 4];
-                byte[] rising_platform_bytes = new byte[map.rising_platforms.Count * 4];
+                Dictionary<int, List<byte[]>> tile_type_object_list = new Dictionary<int, List<byte[]>>();
+                byte[] staircase_bytes = new byte[sys.staircases.Count * 8];
+                byte[] chest_bytes = new byte[sys.chests.Count * 8];
+                byte[] two_way_bytes = new byte[sys.two_way_passages.Count * 4];
+                byte[] one_way_bytes = new byte[sys.one_way_passages.Count * 4];
+                byte[] doodad_bytes = new byte[sys.doodads.Count * 0x10];
+                byte[] snake_bytes = new byte[sys.snakes.Count * 4];
+                byte[] scripted_event_bytes = new byte[sys.scripted_events.Count * 4];
+                byte[] rising_platform_bytes = new byte[sys.rising_platforms.Count * 4];
+                ushort[] encounter_bytes = new ushort[sys.encounters.Count * 4];
 
                 //Populate the header.
-                header[0] = MSBHeader.MAGIC; //I can't do map.header.MAGIC due to a quirk in C#
-                header[1] = MSBHeader._0x4;
-                header[2] = map.header.map_x;
-                header[3] = map.header.map_y;
-                header[4] = map.header.behaviour_count;
-                header[5] = map.header.behaviour_pointer;
-                header[6] = map.header.tile_type_count;
-                header[7] = map.header.tile_type_pointer;
-                header[8] = map.header.encounter_pointer;
-                header[9] = MSBHeader._0x24;
-                header[10] = MSBHeader._0x28;
+                sys_header[0] = MSBHeader.MAGIC; //I can't do sys.header.MAGIC due to a quirk in C#
+                sys_header[1] = MSBHeader._0x4;
+                sys_header[2] = sys.header.map_x;
+                sys_header[3] = sys.header.map_y;
+                sys_header[4] = sys.header.behaviour_count;
+                sys_header[5] = sys.header.behaviour_pointer;
+                sys_header[6] = sys.header.tile_type_count;
+                sys_header[7] = sys.header.tile_type_pointer;
+                sys_header[8] = sys.header.encounter_pointer;
+                sys_header[9] = MSBHeader._0x24;
+                sys_header[10] = MSBHeader._0x28;
 
 
                 //Create the pointer list for each behaviour.
                 for (int x = 0; x < behaviours; x++)
                 {
-                    behaviour_pointers[x] = header_size + (behaviours * 0x4) + (x * map.header.map_x * map.header.map_y * 2);
+                    behaviour_pointers[x] = sys_header_size + (behaviours * 0x4) + (x * sys.header.map_x * sys.header.map_y * 2);
                 }
 
                 //Pack the data for each behaviour.
                 for (int x = 0; x < behaviours; x++)
                 {
-                    for (int y = 0; y < map.header.map_x * map.header.map_y; y++)
+                    for (int y = 0; y < sys.header.map_x * sys.header.map_y; y++)
                     {
-                        behaviour_bytes[(x * map.header.map_x * map.header.map_y * 2) + (y * 2)] = map.behaviour_tiles[x][y].type;
-                        behaviour_bytes[(x * map.header.map_x * map.header.map_y * 2) + (y * 2) + 1] = map.behaviour_tiles[x][y].id;
+                        behaviour_bytes[(x * sys.header.map_x * sys.header.map_y * 2) + (y * 2)] = sys.behaviour_tiles[x][y].type;
+                        behaviour_bytes[(x * sys.header.map_x * sys.header.map_y * 2) + (y * 2) + 1] = sys.behaviour_tiles[x][y].id;
                     }
+                }
+
+                //Create the tile data header. This needs to be done after all the data is written so we know where our pointers go.
+                int rolling_entry_ptr = sys_header_size + behaviour_ptr_size + total_behaviour_size + tile_type_count_size + garbage_size; //Should always be 0x54CC for EON
+                for (int x = 0; x < tile_type_info_count; x++)
+                {
+                    BitConverter.GetBytes(sys.tile_data[x].index).CopyTo(tile_type_data_bytes, x * 0x14);
+                    BitConverter.GetBytes(sys.tile_data[x].entries).CopyTo(tile_type_data_bytes, x * 0x14 + 4);
+                    if (sys.tile_data[x].entries == 0)
+                    {
+                        BitConverter.GetBytes(0).CopyTo(tile_type_data_bytes, x * 0x14 + 8);
+                        BitConverter.GetBytes(0).CopyTo(tile_type_data_bytes, x * 0x14 + 0xC);
+                    }
+                    else
+                    {
+                        BitConverter.GetBytes(rolling_entry_ptr).CopyTo(tile_type_data_bytes, x * 0x14 + 8);
+                        rolling_entry_ptr = (int)(rolling_entry_ptr + sys.tile_data[x].entries * 0x1C); //Need to calculate where the next offset goes. This is for this tile type's data section.
+                        BitConverter.GetBytes(rolling_entry_ptr).CopyTo(tile_type_data_bytes, x * 0x14 + 0xC);
+                        rolling_entry_ptr = (int)(rolling_entry_ptr + sys.tile_data[x].entries * sys.tile_data[x].data_length); //Next, calculate how long the data section is. This is for the next iteration's object.
+                    }
+                    BitConverter.GetBytes(sys.tile_data[x].data_length).CopyTo(tile_type_data_bytes, x * 0x14 + 0x10);
+                }
+
+                //Pack all the tile type objects. These are consistent across all tile types, but we want to neatly separate them as we can't just cluster them all together like other data types.
+                for (int x = 0; x < sys.tile_objects.Count; x++)
+                {
+                    byte type = sys.tile_objects[x].type;
+                    if (!tile_type_object_list.ContainsKey(type))
+                    {
+                        List<byte[]> obj_list = new List<byte[]>();
+                        tile_type_object_list.Add(type, obj_list);
+                    }
+                    byte[] tile_type_object_bytes = new byte[0x1C];
+                    tile_type_object_bytes[0] = type;
+                    tile_type_object_bytes[1] = sys.tile_objects[x].id;
+                    tile_type_object_bytes[2] = sys.tile_objects[x].graphic;
+                    tile_type_object_bytes[3] = sys.tile_objects[x].unknown_1;
+                    tile_type_object_bytes[4] = sys.tile_objects[x].unknown_2;
+                    tile_type_object_bytes[5] = sys.tile_objects[x].map_x;
+                    tile_type_object_bytes[6] = sys.tile_objects[x].map_y;
+                    tile_type_object_bytes[7] = sys.tile_objects[x].unknown_3;
+                    tile_type_object_bytes[8] = sys.tile_objects[x].activation_direction_1;
+                    tile_type_object_bytes[9] = sys.tile_objects[x].activation_direction_2;
+                    tile_type_object_bytes[0xA] = sys.tile_objects[x].activation_direction_3;
+                    tile_type_object_bytes[0xB] = sys.tile_objects[x].activation_direction_4;
+                    BitConverter.GetBytes(MSBTileTypeObject.UNUSED_1).CopyTo(tile_type_object_bytes, 0xC);
+                    BitConverter.GetBytes(MSBTileTypeObject.UNUSED_2).CopyTo(tile_type_object_bytes, 0x14);
+                    tile_type_object_list[type].Add(tile_type_object_bytes);
                 }
 
                 //Pack each data type. 
                 //Staircases
-                for (int x = 0; x < map.staircases.Count; x++)
+                for (int x = 0; x < sys.staircases.Count; x++)
                 {
-                    staircase_bytes[x * 0x8] = map.staircases[x].dest_floor;
-                    staircase_bytes[x * 0x8 + 1] = map.staircases[x].dest_x;
-                    staircase_bytes[x * 0x8 + 2] = map.staircases[x].dest_y;
-                    staircase_bytes[x * 0x8 + 3] = map.staircases[x].dest_facing;
-                    staircase_bytes[x * 0x8 + 4] = map.staircases[x].sfx;
-                    staircase_bytes[x * 0x8 + 5] = map.staircases[x].interact_message;
-                    staircase_bytes[x * 0x8 + 6] = map.staircases[x].unknown_1;
-                    staircase_bytes[x * 0x8 + 7] = map.staircases[x].unknown_2;
+                    staircase_bytes[x * 0x8] = sys.staircases[x].dest_floor;
+                    staircase_bytes[x * 0x8 + 1] = sys.staircases[x].dest_x;
+                    staircase_bytes[x * 0x8 + 2] = sys.staircases[x].dest_y;
+                    staircase_bytes[x * 0x8 + 3] = sys.staircases[x].dest_facing;
+                    staircase_bytes[x * 0x8 + 4] = sys.staircases[x].sfx;
+                    staircase_bytes[x * 0x8 + 5] = sys.staircases[x].interact_message;
+                    staircase_bytes[x * 0x8 + 6] = sys.staircases[x].unknown_1;
+                    staircase_bytes[x * 0x8 + 7] = sys.staircases[x].unknown_2;
                 }
 
                 //Chests
-                for (int x = 0; x < map.chests.Count; x++)
+                for (int x = 0; x < sys.chests.Count; x++)
                 {
-                    chest_bytes[x * 0x8] = map.chests[x].is_item;
-                    chest_bytes[x * 0x8 + 1] = map.chests[x].unknown_1;
-                    chest_bytes[x * 0x8 + 2] = map.chests[x].unknown_2;
-                    chest_bytes[x * 0x8 + 3] = map.chests[x].unknown_3;
-                    BitConverter.GetBytes(map.chests[x].value).CopyTo(chest_bytes, x * 0x8 + 4);
+                    chest_bytes[x * 0x8] = sys.chests[x].is_item;
+                    chest_bytes[x * 0x8 + 1] = sys.chests[x].unknown_1;
+                    chest_bytes[x * 0x8 + 2] = sys.chests[x].unknown_2;
+                    chest_bytes[x * 0x8 + 3] = sys.chests[x].unknown_3;
+                    BitConverter.GetBytes(sys.chests[x].value).CopyTo(chest_bytes, x * 0x8 + 4);
                 }
 
                 //Two-way passages
-                for (int x = 0; x < map.two_way_passages.Count; x++)
+                for (int x = 0; x < sys.two_way_passages.Count; x++)
                 {
-                    two_way_bytes[x * 0x4] = map.two_way_passages[x].unknown_1;
-                    two_way_bytes[x * 0x4 + 1] = map.two_way_passages[x].unknown_2;
-                    two_way_bytes[x * 0x4 + 2] = map.two_way_passages[x].unknown_3;
-                    two_way_bytes[x * 0x4 + 3] = map.two_way_passages[x].unknown_4;
+                    two_way_bytes[x * 0x4] = sys.two_way_passages[x].unknown_1;
+                    two_way_bytes[x * 0x4 + 1] = sys.two_way_passages[x].unknown_2;
+                    two_way_bytes[x * 0x4 + 2] = sys.two_way_passages[x].unknown_3;
+                    two_way_bytes[x * 0x4 + 3] = sys.two_way_passages[x].unknown_4;
                 }
 
                 //One-way passages
-                for (int x = 0; x < map.one_way_passages.Count; x++)
+                for (int x = 0; x < sys.one_way_passages.Count; x++)
                 {
-                    one_way_bytes[x * 0x4] = map.one_way_passages[x].unknown_1;
-                    one_way_bytes[x * 0x4 + 1] = map.one_way_passages[x].unknown_2;
-                    one_way_bytes[x * 0x4 + 2] = map.one_way_passages[x].unknown_3;
-                    one_way_bytes[x * 0x4 + 3] = map.one_way_passages[x].unknown_4;
+                    one_way_bytes[x * 0x4] = sys.one_way_passages[x].unknown_1;
+                    one_way_bytes[x * 0x4 + 1] = sys.one_way_passages[x].unknown_2;
+                    one_way_bytes[x * 0x4 + 2] = sys.one_way_passages[x].unknown_3;
+                    one_way_bytes[x * 0x4 + 3] = sys.one_way_passages[x].unknown_4;
                 }
 
                 //Doodads
-                for (int x = 0; x < map.doodads.Count; x++)
+                for (int x = 0; x < sys.doodads.Count; x++)
                 {
-                    doodad_bytes[x * 0x10] = map.doodads[x].id_1;
-                    doodad_bytes[x * 0x10 + 1] = map.doodads[x].unknown_1_1;
-                    doodad_bytes[x * 0x10 + 2] = map.doodads[x].unknown_2_1;
-                    doodad_bytes[x * 0x10 + 3] = map.doodads[x].unknown_3_1;
-                    doodad_bytes[x * 0x10 + 4] = map.doodads[x].id_2;
-                    doodad_bytes[x * 0x10 + 5] = map.doodads[x].unknown_1_2;
-                    doodad_bytes[x * 0x10 + 6] = map.doodads[x].unknown_2_2;
-                    doodad_bytes[x * 0x10 + 7] = map.doodads[x].unknown_3_2;
-                    doodad_bytes[x * 0x10 + 8] = map.doodads[x].id_3;
-                    doodad_bytes[x * 0x10 + 9] = map.doodads[x].unknown_1_3;
-                    doodad_bytes[x * 0x10 + 0xA] = map.doodads[x].unknown_2_3;
-                    doodad_bytes[x * 0x10 + 0xB] = map.doodads[x].unknown_3_3;
-                    doodad_bytes[x * 0x10 + 0xC] = map.doodads[x].id_4;
-                    doodad_bytes[x * 0x10 + 0xD] = map.doodads[x].unknown_1_4;
-                    doodad_bytes[x * 0x10 + 0xE] = map.doodads[x].unknown_2_4;
-                    doodad_bytes[x * 0x10 + 0xF] = map.doodads[x].unknown_3_4;
+                    doodad_bytes[x * 0x10] = sys.doodads[x].id_1;
+                    doodad_bytes[x * 0x10 + 1] = sys.doodads[x].unknown_1_1;
+                    doodad_bytes[x * 0x10 + 2] = sys.doodads[x].unknown_2_1;
+                    doodad_bytes[x * 0x10 + 3] = sys.doodads[x].unknown_3_1;
+                    doodad_bytes[x * 0x10 + 4] = sys.doodads[x].id_2;
+                    doodad_bytes[x * 0x10 + 5] = sys.doodads[x].unknown_1_2;
+                    doodad_bytes[x * 0x10 + 6] = sys.doodads[x].unknown_2_2;
+                    doodad_bytes[x * 0x10 + 7] = sys.doodads[x].unknown_3_2;
+                    doodad_bytes[x * 0x10 + 8] = sys.doodads[x].id_3;
+                    doodad_bytes[x * 0x10 + 9] = sys.doodads[x].unknown_1_3;
+                    doodad_bytes[x * 0x10 + 0xA] = sys.doodads[x].unknown_2_3;
+                    doodad_bytes[x * 0x10 + 0xB] = sys.doodads[x].unknown_3_3;
+                    doodad_bytes[x * 0x10 + 0xC] = sys.doodads[x].id_4;
+                    doodad_bytes[x * 0x10 + 0xD] = sys.doodads[x].unknown_1_4;
+                    doodad_bytes[x * 0x10 + 0xE] = sys.doodads[x].unknown_2_4;
+                    doodad_bytes[x * 0x10 + 0xF] = sys.doodads[x].unknown_3_4;
                 }
 
                 //Snakes
-                for (int x = 0; x < map.snakes.Count; x++)
+                for (int x = 0; x < sys.snakes.Count; x++)
                 {
-                    snake_bytes[x * 0x4] = map.snakes[x].id;
-                    snake_bytes[x * 0x4 + 1] = map.snakes[x].unknown_1;
-                    snake_bytes[x * 0x4 + 2] = map.snakes[x].position;
-                    snake_bytes[x * 0x4 + 3] = map.snakes[x].unknown_2;
+                    snake_bytes[x * 0x4] = sys.snakes[x].id;
+                    snake_bytes[x * 0x4 + 1] = sys.snakes[x].unknown_1;
+                    snake_bytes[x * 0x4 + 2] = sys.snakes[x].position;
+                    snake_bytes[x * 0x4 + 3] = sys.snakes[x].unknown_2;
                 }
 
                 //Scripted events
-                for (int x = 0; x < map.scripted_events.Count; x++)
+                for (int x = 0; x < sys.scripted_events.Count; x++)
                 {
-                    BitConverter.GetBytes(map.scripted_events[x].flag_1).CopyTo(scripted_event_bytes, x * 0x2C);
-                    BitConverter.GetBytes(map.scripted_events[x].flag_2).CopyTo(scripted_event_bytes, x * 0x2C + 2);
-                    BitConverter.GetBytes(map.scripted_events[x].flag_3).CopyTo(scripted_event_bytes, x * 0x2C + 4);
-                    BitConverter.GetBytes(map.scripted_events[x].required_flag).CopyTo(scripted_event_bytes, x * 0x2C + 6);
-                    scripted_event_bytes[x + 0x2C + 8] = map.scripted_events[x].unknown_1;
-                    scripted_event_bytes[x + 0x2C + 9] = map.scripted_events[x].unknown_2;
-                    scripted_event_bytes[x + 0x2C + 0xA] = map.scripted_events[x].unknown_3;
-                    scripted_event_bytes[x + 0x2C + 0xB] = map.scripted_events[x].unknown_4;
-                    scripted_event_bytes[x + 0x2C + 0xC] = map.scripted_events[x].unknown_5;
-                    scripted_event_bytes[x + 0x2C + 0xD] = map.scripted_events[x].unknown_6;
-                    scripted_event_bytes[x + 0x2C + 0xE] = map.scripted_events[x].unknown_7;
-                    scripted_event_bytes[x + 0x2C + 0xF] = map.scripted_events[x].unknown_8;
-                    scripted_event_bytes[x + 0x2C + 0x10] = map.scripted_events[x].prompt;
-                    scripted_event_bytes[x + 0x2C + 0x11] = map.scripted_events[x].unknown_9;
-                    BitConverter.GetBytes(map.scripted_events[x].unknown_10).CopyTo(scripted_event_bytes, x * 0x2C + 12);
-                    Encoding.ASCII.GetBytes(map.scripted_events[x].script_name).CopyTo(scripted_event_bytes, x * 0x2C + 14);
+                    BitConverter.GetBytes(sys.scripted_events[x].flag_1).CopyTo(scripted_event_bytes, x * 0x2C);
+                    BitConverter.GetBytes(sys.scripted_events[x].flag_2).CopyTo(scripted_event_bytes, x * 0x2C + 2);
+                    BitConverter.GetBytes(sys.scripted_events[x].flag_3).CopyTo(scripted_event_bytes, x * 0x2C + 4);
+                    BitConverter.GetBytes(sys.scripted_events[x].required_flag).CopyTo(scripted_event_bytes, x * 0x2C + 6);
+                    scripted_event_bytes[x + 0x2C + 8] = sys.scripted_events[x].unknown_1;
+                    scripted_event_bytes[x + 0x2C + 9] = sys.scripted_events[x].unknown_2;
+                    scripted_event_bytes[x + 0x2C + 0xA] = sys.scripted_events[x].unknown_3;
+                    scripted_event_bytes[x + 0x2C + 0xB] = sys.scripted_events[x].unknown_4;
+                    scripted_event_bytes[x + 0x2C + 0xC] = sys.scripted_events[x].unknown_5;
+                    scripted_event_bytes[x + 0x2C + 0xD] = sys.scripted_events[x].unknown_6;
+                    scripted_event_bytes[x + 0x2C + 0xE] = sys.scripted_events[x].unknown_7;
+                    scripted_event_bytes[x + 0x2C + 0xF] = sys.scripted_events[x].unknown_8;
+                    scripted_event_bytes[x + 0x2C + 0x10] = sys.scripted_events[x].prompt;
+                    scripted_event_bytes[x + 0x2C + 0x11] = sys.scripted_events[x].unknown_9;
+                    BitConverter.GetBytes(sys.scripted_events[x].unknown_10).CopyTo(scripted_event_bytes, x * 0x2C + 12);
+                    Encoding.ASCII.GetBytes(sys.scripted_events[x].script_name).CopyTo(scripted_event_bytes, x * 0x2C + 14);
                 }
 
                 //Rising platforms
-                for (int x = 0; x < map.rising_platforms.Count; x++)
+                for (int x = 0; x < sys.rising_platforms.Count; x++)
                 {
-                    rising_platform_bytes[x + 0x4] = map.rising_platforms[x].id;
-                    rising_platform_bytes[x + 0x4 + 1] = map.rising_platforms[x].unknown_1;
-                    rising_platform_bytes[x + 0x4 + 2] = map.rising_platforms[x].unknown_2;
-                    rising_platform_bytes[x + 0x4 + 3] = map.rising_platforms[x].unknown_3;
+                    rising_platform_bytes[x + 0x4] = sys.rising_platforms[x].id;
+                    rising_platform_bytes[x + 0x4 + 1] = sys.rising_platforms[x].unknown_1;
+                    rising_platform_bytes[x + 0x4 + 2] = sys.rising_platforms[x].unknown_2;
+                    rising_platform_bytes[x + 0x4 + 3] = sys.rising_platforms[x].unknown_3;
                 }
 
-                //Create the tile data header. This needs to be done after all the data is written so we know where our pointers go.
-                int rolling_entry_ptr = header_size + behaviour_ptr_size + total_behaviour_size + tile_type_count_size + garbage_size;
-                Debug.WriteLine(rolling_entry_ptr);
-                for (int x = 0; x < tile_type_info_count; x++)
+                //Finally, we handle encounters. This is the last part of the file.
+                for (int x = 0; x < sys.encounters.Count; x++)
                 {
-                    BitConverter.GetBytes(map.tile_data[x].index).CopyTo(tile_type_data_bytes, x * 0x14);
-                    BitConverter.GetBytes(map.tile_data[x].entries).CopyTo(tile_type_data_bytes, x * 0x14 + 4);
-                    BitConverter.GetBytes(map.tile_data[x].entry_ptr).CopyTo(tile_type_data_bytes, x * 0x14 + 8);
-                    BitConverter.GetBytes(map.tile_data[x].data_ptr).CopyTo(tile_type_data_bytes, x * 0x14 + 0xC);
-                    BitConverter.GetBytes(map.tile_data[x].data_length).CopyTo(tile_type_data_bytes, x * 0x14 + 0x10);
+                    encounter_bytes[x * 0x4] = sys.encounters[x].encounter_id;
+                    encounter_bytes[x * 0x4 + 1] = sys.encounters[x].danger;
+                    encounter_bytes[x * 0x4 + 2] = sys.encounters[x].unknown_1;
+                    encounter_bytes[x * 0x4 + 3] = sys.encounters[x].unknown_2;
                 }
+
+                //After getting all the bytes in order, we need to build it into a file. It is fairly straightforward to just pour it all in, but we have to keep track of the offset.
+                int sys_ptr = 0;
+                Buffer.BlockCopy(sys_header, 0, sys_save_byte, sys_ptr, sys_header.Length * 0x4);
+                sys_ptr = sys_ptr + sys_header.Length * 0x4;
+                Buffer.BlockCopy(behaviour_pointers, 0, sys_save_byte, sys_ptr, behaviour_pointers.Length * 0x4);
+                sys_ptr = sys_ptr + behaviour_pointers.Length * 0x4;
+                Buffer.BlockCopy(behaviour_bytes, 0, sys_save_byte, sys_ptr, behaviour_bytes.Length);
+                sys_ptr = sys_ptr + behaviour_bytes.Length;
+                Buffer.BlockCopy(tile_type_data_bytes, 0, sys_save_byte, sys_ptr, tile_type_data_bytes.Length);
+                sys_ptr = sys_ptr + tile_type_data_bytes.Length;
+                Buffer.BlockCopy(sys.garbage, 0, sys_save_byte, sys_ptr, sys.garbage.Length);
+                sys_ptr = sys_ptr + sys.garbage.Length;
+                //We have to do a little more now with the lists to make sure everything is in the right order.
+                for (int x = 0; x < sys.header.tile_type_count; x++)
+                {
+                    if (tile_type_object_list.ContainsKey(x))
+                    {
+                        for (int y = 0; y < tile_type_object_list[x].Count; y++)
+                        {
+                            Buffer.BlockCopy(tile_type_object_list[x][y], 0, sys_save_byte, sys_ptr, tile_type_object_list[x][y].Length);
+                            sys_ptr = sys_ptr + tile_type_object_list[x][y].Length;
+                        }
+                    }
+                    switch (x)
+                    {
+                        case 0xE:
+                            Buffer.BlockCopy(staircase_bytes, 0, sys_save_byte, sys_ptr, staircase_bytes.Length);
+                            sys_ptr = sys_ptr + staircase_bytes.Length;
+                            break;
+                        case 0xF:
+                            Buffer.BlockCopy(chest_bytes, 0, sys_save_byte, sys_ptr, chest_bytes.Length);
+                            sys_ptr = sys_ptr + chest_bytes.Length;
+                            break;
+                        case 0x10:
+                            Buffer.BlockCopy(two_way_bytes, 0, sys_save_byte, sys_ptr, two_way_bytes.Length);
+                            sys_ptr = sys_ptr + two_way_bytes.Length;
+                            break;
+                        case 0x11:
+                            Buffer.BlockCopy(one_way_bytes, 0, sys_save_byte, sys_ptr, one_way_bytes.Length);
+                            sys_ptr = sys_ptr + one_way_bytes.Length;
+                            break;
+                        case 0x12:
+                            Buffer.BlockCopy(doodad_bytes, 0, sys_save_byte, sys_ptr, doodad_bytes.Length);
+                            sys_ptr = sys_ptr + doodad_bytes.Length;
+                            break;
+                        case 0x17:
+                            Buffer.BlockCopy(snake_bytes, 0, sys_save_byte, sys_ptr, snake_bytes.Length);
+                            sys_ptr = sys_ptr + snake_bytes.Length;
+                            break;
+                        case 0x18:
+                            Buffer.BlockCopy(scripted_event_bytes, 0, sys_save_byte, sys_ptr, scripted_event_bytes.Length);
+                            sys_ptr = sys_ptr + scripted_event_bytes.Length;
+                            break;
+                        case 0x19:
+                            Buffer.BlockCopy(rising_platform_bytes, 0, sys_save_byte, sys_ptr, rising_platform_bytes.Length);
+                            sys_ptr = sys_ptr + rising_platform_bytes.Length;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                //Finally, the encounter bytes.
+                Buffer.BlockCopy(encounter_bytes, 0, sys_save_byte, sys_ptr, encounter_bytes.Length * 0x2);
+
+                //Write to SYS file.
+                Debug.WriteLine(sys_path);
+                File.WriteAllBytes(sys_path + "test", sys_save_byte);
+                //Debug.WriteLine("File writing disabled!");
+
+                //Next, the MGB. A similar process.
+                int layers = gfx.header.layer_count;
+                int indices = gfx.header.filename_count;
+
+                //Calculate filesize.
+                int gfx_header_size = 0x70; //Most of this space is unused.
+                int layer_ptr_size = layers * 0x4; //Number of layer pointers.
+                int total_layer_size = layers * gfx.header.map_x * gfx.header.map_y * 0x4; //Number of tiles times the number of layers times four.
+                int filename_size = indices * 0x94; //Number of tile file name indices in the file.
+                int gfx_size = gfx_header_size + layer_ptr_size + total_layer_size + filename_size; //Add all sizes together.
+                byte[] gfx_save_byte = new byte[gfx_size];
+                Debug.WriteLine(Convert.ToString(layer_ptr_size, 16));
+                Debug.WriteLine(Convert.ToString(total_layer_size, 16));
+                Debug.WriteLine(Convert.ToString(filename_size, 16));
+                Debug.WriteLine(Convert.ToString(gfx_size, 16));
+
+                //Create the header array.
+                int[] gfx_header = new int[gfx_header_size / 4];
+                gfx_header[0] = MGBHeader.MAGIC;
+                gfx_header[1] = MGBHeader._0x4;
+                gfx_header[2] = gfx.header.map_x;
+                gfx_header[3] = gfx.header.map_y;
+                gfx_header[4] = gfx.header.layer_count;
+                gfx_header[5] = gfx.header.layer_pointer;
+                gfx_header[6] = gfx.header.filename_count;
+                gfx_header[7] = gfx.header.filename_pointer;
+                for (int x = 0; x < 0x14; x++) //These values are always 0.
+                {
+                    gfx_header[8 + x] = 0;
+                }
+
+                //Pointer array.
+                int[] gfx_layer_pointer_bytes = new int[gfx.header.layer_count];
+                for (int x = 0; x < gfx.header.layer_count; x++)
+                {
+                    gfx_layer_pointer_bytes[x] = gfx_header_size + (layers * 0x4) + (x * gfx.header.map_x * gfx.header.map_y * 4);
+                }
+
+                byte[] layer_bytes = new byte[layers * gfx.header.map_x * gfx.header.map_y * 4];
+                //Copy the layer data in.
+                for (int x = 0; x < layers; x++)
+                {
+                    for (int y = 0; y < gfx.header.map_x * gfx.header.map_y; y++)
+                    {
+                        layer_bytes[(x * gfx.header.map_x * gfx.header.map_y * 4) + (y * 4)] = gfx.layer_tiles[x][y].id;
+                        layer_bytes[(x * gfx.header.map_x * gfx.header.map_y * 4) + (y * 4) + 1] = gfx.layer_tiles[x][y].rotation;
+                        layer_bytes[(x * gfx.header.map_x * gfx.header.map_y * 4) + (y * 4) + 2] = gfx.layer_tiles[x][y].unknown_1;
+                        layer_bytes[(x * gfx.header.map_x * gfx.header.map_y * 4) + (y * 4) + 3] = gfx.layer_tiles[x][y].unknown_2;
+                    }
+                }
+
+                byte[] filename_bytes = new byte[indices * 0x94];
+                //Copy in the filename data. Due to inconsistent leftovers in the base game files, we won't be able to make byte-accurate copies of the original data.
+                for (int x = 0; x < indices; x++)
+                {
+                    BitConverter.GetBytes(gfx.indices[x].index).CopyTo(filename_bytes, x * 0x94);
+                    Encoding.ASCII.GetBytes(gfx.indices[x].file_1).CopyTo(filename_bytes, x * 0x94 + 4);
+                    Encoding.ASCII.GetBytes(gfx.indices[x].file_2).CopyTo(filename_bytes, x * 0x94 + 0x24);
+                    Encoding.ASCII.GetBytes(gfx.indices[x].file_3).CopyTo(filename_bytes, x * 0x94 + 0x44);
+                    Encoding.ASCII.GetBytes(gfx.indices[x].file_4).CopyTo(filename_bytes, x * 0x94 + 0x64);
+                    filename_bytes[x * 0x94 + 0x84] = gfx.indices[x].file_1_rotation;
+                    filename_bytes[x * 0x94 + 0x85] = gfx.indices[x].file_2_rotation;
+                    filename_bytes[x * 0x94 + 0x86] = gfx.indices[x].file_3_rotation;
+                    filename_bytes[x * 0x94 + 0x87] = gfx.indices[x].file_4_rotation;
+                    filename_bytes[x * 0x94 + 0x88] = gfx.indices[x].unknown_1;
+                    filename_bytes[x * 0x94 + 0x89] = gfx.indices[x].unknown_2;
+                    filename_bytes[x * 0x94 + 0x8A] = gfx.indices[x].unknown_3;
+                    filename_bytes[x * 0x94 + 0x8B] = gfx.indices[x].unknown_4;
+                    filename_bytes[x * 0x94 + 0x8C] = gfx.indices[x].unknown_5;
+                    filename_bytes[x * 0x94 + 0x8D] = gfx.indices[x].unknown_6;
+                    filename_bytes[x * 0x94 + 0x8E] = gfx.indices[x].unknown_7;
+                    filename_bytes[x * 0x94 + 0x8F] = gfx.indices[x].unknown_8;
+                    filename_bytes[x * 0x94 + 0x90] = gfx.indices[x].unknown_9;
+                    filename_bytes[x * 0x94 + 0x91] = gfx.indices[x].unknown_10;
+                    filename_bytes[x * 0x94 + 0x92] = gfx.indices[x].unknown_11;
+                    filename_bytes[x * 0x94 + 0x93] = gfx.indices[x].unknown_12;
+                }
+
+                //Build the file.
+                int gfx_ptr = 0;
+                Buffer.BlockCopy(gfx_header, 0, gfx_save_byte, gfx_ptr, gfx_header.Length * 4);
+                gfx_ptr = gfx_ptr + gfx_header.Length * 4;
+                Buffer.BlockCopy(gfx_layer_pointer_bytes, 0, gfx_save_byte, gfx_ptr, gfx_layer_pointer_bytes.Length * 4);
+                gfx_ptr = gfx_ptr + gfx_layer_pointer_bytes.Length * 4;
+                Buffer.BlockCopy(layer_bytes, 0, gfx_save_byte, gfx_ptr, layer_bytes.Length);
+                gfx_ptr = gfx_ptr + layer_bytes.Length;
+                Buffer.BlockCopy(filename_bytes, 0, gfx_save_byte, gfx_ptr, filename_bytes.Length);
+
+                //Write to GFX file.
+                Debug.WriteLine(gfx_path);
+                File.WriteAllBytes(gfx_path + "test", gfx_save_byte);
+                //Debug.WriteLine("File writing disabled!");
             }
         }
     }

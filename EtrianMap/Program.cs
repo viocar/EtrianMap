@@ -102,6 +102,7 @@ namespace EtrianMap
                                     gfx_stream.Read(gfx_file, 0, gfx_length);
                                 }
                                 MapDatCollection entry = new MapDatCollection();
+                                entry.base_path = mapdat;
                                 entry.sys_filename = sys_list[x];
                                 entry.gfx_filename = gfx_list[x];
                                 entry.sys_file = sys_file;
@@ -109,7 +110,11 @@ namespace EtrianMap
                                 mapdat_list.Add(entry); //This feels slightly weird...
                             }
                         }
-
+                        else
+                        {
+                            MessageBox.Show("Invalid Etrian Odyssey Nexus directory.\nNumber of SYS and GFX files were not equal.\nPlease ensure your MapDat folder is correct.");
+                            Environment.Exit(0);
+                        }
                     }
                     else
                     {
@@ -119,7 +124,7 @@ namespace EtrianMap
                 }
                 else
                 {
-                    MessageBox.Show("Invalid Etrian Odyssey Nexus directory. Give this error message more detail later.");
+                    MessageBox.Show("Invalid Etrian Odyssey Nexus directory. Please select an Etrian Odyssey Nexus directory.");
                     Environment.Exit(0);
                 }
             }

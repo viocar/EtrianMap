@@ -31,12 +31,13 @@ namespace EtrianMap
                 globals.mapdat_list = mapdat_list;
                 globals.open_path = open_path;
                 globals.open_map = open_map;
-                globals.map_data = BuildInitialMapData();
+                globals.sys_data = BuildInitialMapData();
+                globals.gfx_data = BuildInitialGfxData();
                 globals.map_area = new Rectangle(
                     MapRender.LEFT_EDGE, 
                     MapRender.TOP_EDGE, 
-                    (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS) * globals.map_data.header.map_x, 
-                    (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS) * globals.map_data.header.map_y
+                    (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS) * globals.sys_data.header.map_x, 
+                    (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS) * globals.sys_data.header.map_y
                 );
             }
         }
@@ -77,7 +78,7 @@ namespace EtrianMap
                 }
                 int box_x = (mouse_pos.X - MapRender.LEFT_EDGE) / (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS);
                 int box_y = (mouse_pos.Y - MapRender.TOP_EDGE) / (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS);
-                globals.selected_box.Add(box_x + box_y * globals.map_data.header.map_x);
+                globals.selected_box.Add(box_x + box_y * globals.sys_data.header.map_x);
                 globals.selected_box_x.Add(box_x); //It's easier just to compute this now instead of trying to recompute it later when I need it again.
                 globals.selected_box_y.Add(box_y);
                 Debug.WriteLine(box_x.ToString("X2") + ", " + box_y.ToString("X2"));
