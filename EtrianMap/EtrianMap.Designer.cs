@@ -30,7 +30,6 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(EtrianMap));
             this.Save = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
             this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -55,31 +54,26 @@
             this.searchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.cb_Type = new System.Windows.Forms.ComboBox();
+            this.rb_Sys = new System.Windows.Forms.RadioButton();
+            this.rb_Gfx = new System.Windows.Forms.RadioButton();
+            this.pn_RadioButtons = new System.Windows.Forms.Panel();
+            this.dgv_Data = new System.Windows.Forms.DataGridView();
             this.cb_Subtype = new System.Windows.Forms.ComboBox();
             this.menuStrip.SuspendLayout();
-            this.groupBox1.SuspendLayout();
+            this.pn_RadioButtons.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dgv_Data)).BeginInit();
             this.SuspendLayout();
             // 
             // Save
             // 
-            this.Save.Location = new System.Drawing.Point(331, 19);
+            this.Save.Location = new System.Drawing.Point(1498, 12);
             this.Save.Name = "Save";
             this.Save.Size = new System.Drawing.Size(75, 23);
             this.Save.TabIndex = 1;
             this.Save.Text = "Save";
             this.Save.UseVisualStyleBackColor = true;
             this.Save.Click += new System.EventHandler(this.Save_Click);
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(760, 56);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 2;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
             // 
             // menuStrip
             // 
@@ -91,7 +85,7 @@
             this.helpToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(1184, 24);
+            this.menuStrip.Size = new System.Drawing.Size(1584, 24);
             this.menuStrip.TabIndex = 3;
             this.menuStrip.Text = "menuStrip";
             // 
@@ -270,40 +264,76 @@
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
             this.aboutToolStripMenuItem.Text = "&About...";
             // 
-            // groupBox1
-            // 
-            this.groupBox1.Controls.Add(this.Save);
-            this.groupBox1.Location = new System.Drawing.Point(760, 32);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(412, 638);
-            this.groupBox1.TabIndex = 4;
-            this.groupBox1.TabStop = false;
-            // 
             // cb_Type
             // 
             this.cb_Type.FormattingEnabled = true;
-            this.cb_Type.Location = new System.Drawing.Point(924, 12);
+            this.cb_Type.Location = new System.Drawing.Point(1244, 13);
             this.cb_Type.Name = "cb_Type";
             this.cb_Type.Size = new System.Drawing.Size(121, 21);
             this.cb_Type.TabIndex = 5;
+            this.cb_Type.SelectedIndexChanged += new System.EventHandler(this.cb_Type_SelectedIndexChanged);
+            // 
+            // rb_Sys
+            // 
+            this.rb_Sys.AutoSize = true;
+            this.rb_Sys.Location = new System.Drawing.Point(21, 5);
+            this.rb_Sys.Name = "rb_Sys";
+            this.rb_Sys.Size = new System.Drawing.Size(46, 17);
+            this.rb_Sys.TabIndex = 7;
+            this.rb_Sys.TabStop = true;
+            this.rb_Sys.Text = "SYS";
+            this.rb_Sys.UseVisualStyleBackColor = true;
+            this.rb_Sys.CheckedChanged += new System.EventHandler(this.rb_Sys_CheckedChanged);
+            // 
+            // rb_Gfx
+            // 
+            this.rb_Gfx.AutoSize = true;
+            this.rb_Gfx.Location = new System.Drawing.Point(73, 5);
+            this.rb_Gfx.Name = "rb_Gfx";
+            this.rb_Gfx.Size = new System.Drawing.Size(46, 17);
+            this.rb_Gfx.TabIndex = 8;
+            this.rb_Gfx.TabStop = true;
+            this.rb_Gfx.Text = "GFX";
+            this.rb_Gfx.UseVisualStyleBackColor = true;
+            this.rb_Gfx.CheckedChanged += new System.EventHandler(this.rb_Gfx_CheckedChanged);
+            // 
+            // pn_RadioButtons
+            // 
+            this.pn_RadioButtons.Controls.Add(this.rb_Gfx);
+            this.pn_RadioButtons.Controls.Add(this.rb_Sys);
+            this.pn_RadioButtons.Location = new System.Drawing.Point(1116, 9);
+            this.pn_RadioButtons.Name = "pn_RadioButtons";
+            this.pn_RadioButtons.Size = new System.Drawing.Size(122, 26);
+            this.pn_RadioButtons.TabIndex = 9;
+            // 
+            // dgv_Data
+            // 
+            this.dgv_Data.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgv_Data.Location = new System.Drawing.Point(761, 37);
+            this.dgv_Data.Name = "dgv_Data";
+            this.dgv_Data.Size = new System.Drawing.Size(811, 657);
+            this.dgv_Data.TabIndex = 10;
+            this.dgv_Data.SelectionChanged += new System.EventHandler(this.dgv_Data_SelectionChanged);
             // 
             // cb_Subtype
             // 
             this.cb_Subtype.FormattingEnabled = true;
-            this.cb_Subtype.Location = new System.Drawing.Point(1051, 12);
+            this.cb_Subtype.Location = new System.Drawing.Point(1371, 13);
             this.cb_Subtype.Name = "cb_Subtype";
             this.cb_Subtype.Size = new System.Drawing.Size(121, 21);
-            this.cb_Subtype.TabIndex = 6;
+            this.cb_Subtype.TabIndex = 11;
+            this.cb_Subtype.SelectedIndexChanged += new System.EventHandler(this.cb_Subtype_SelectedIndexChanged);
             // 
             // EtrianMap
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1184, 711);
+            this.ClientSize = new System.Drawing.Size(1584, 711);
             this.Controls.Add(this.cb_Subtype);
+            this.Controls.Add(this.dgv_Data);
+            this.Controls.Add(this.Save);
+            this.Controls.Add(this.pn_RadioButtons);
             this.Controls.Add(this.cb_Type);
-            this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.button1);
             this.Controls.Add(this.menuStrip);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -311,9 +341,12 @@
             this.Name = "EtrianMap";
             this.Text = "EtrianMap";
             this.MouseClick += new System.Windows.Forms.MouseEventHandler(this.EtrianMap_MouseClick);
+            this.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.EtrianMap_MouseClick);
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
-            this.groupBox1.ResumeLayout(false);
+            this.pn_RadioButtons.ResumeLayout(false);
+            this.pn_RadioButtons.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dgv_Data)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -321,7 +354,6 @@
 
         #endregion
         private System.Windows.Forms.Button Save;
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.MenuStrip menuStrip;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
@@ -346,8 +378,11 @@
         private System.Windows.Forms.ToolStripMenuItem searchToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
-        private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.ComboBox cb_Type;
+        private System.Windows.Forms.RadioButton rb_Sys;
+        private System.Windows.Forms.RadioButton rb_Gfx;
+        private System.Windows.Forms.Panel pn_RadioButtons;
+        private System.Windows.Forms.DataGridView dgv_Data;
         private System.Windows.Forms.ComboBox cb_Subtype;
     }
 }

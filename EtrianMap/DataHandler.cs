@@ -25,14 +25,16 @@ namespace EtrianMap
             MSBFile file = new MSBFile();
 
             //Create the header.
-            MSBHeader header = new MSBHeader();
-            header.map_x = BitConverter.ToInt32(sys, 0x8);
-            header.map_y = BitConverter.ToInt32(sys, 0xC);
-            header.behaviour_count = BitConverter.ToInt32(sys, 0x10);
-            header.behaviour_pointer = BitConverter.ToInt32(sys, 0x14);
-            header.tile_type_count = BitConverter.ToInt32(sys, 0x18);
-            header.tile_type_pointer = BitConverter.ToInt32(sys, 0x1C);
-            header.encounter_pointer = BitConverter.ToInt32(sys, 0x20);
+            MSBHeader header = new MSBHeader
+            {
+                map_x = BitConverter.ToInt32(sys, 0x8),
+                map_y = BitConverter.ToInt32(sys, 0xC),
+                behaviour_count = BitConverter.ToInt32(sys, 0x10),
+                behaviour_pointer = BitConverter.ToInt32(sys, 0x14),
+                tile_type_count = BitConverter.ToInt32(sys, 0x18),
+                tile_type_pointer = BitConverter.ToInt32(sys, 0x1C),
+                encounter_pointer = BitConverter.ToInt32(sys, 0x20)
+            };
             file.header = header;
 
             //Now that we have the data in the header, we're going to create an entry for each tile so that we can track what is on which tile.
@@ -54,9 +56,11 @@ namespace EtrianMap
                 int ptr = BitConverter.ToInt32(sys, header.behaviour_pointer + (x * 0x4));
                 for (int y = 0; y < (header.map_x * header.map_y); y++)
                 {
-                    MSBBehaviours tile = new MSBBehaviours();
-                    tile.type = sys[ptr + (y * 2)];
-                    tile.id = sys[ptr + (y * 2) + 1];
+                    MSBBehaviours tile = new MSBBehaviours
+                    {
+                        type = sys[ptr + (y * 2)],
+                        id = sys[ptr + (y * 2) + 1]
+                    };
                     section.Add(tile);
                     if (tile.type != 0 && tile.type != 0xA)
                     {
@@ -70,12 +74,14 @@ namespace EtrianMap
             for (int x = 0; x < header.tile_type_count; x++)
             {
                 int ptr = header.tile_type_pointer;
-                MSBTileTypeInfo tile = new MSBTileTypeInfo();
-                tile.index = BitConverter.ToUInt32(sys, ptr + (x * 0x14));
-                tile.entries = BitConverter.ToUInt32(sys, ptr + 4 + (x * 0x14));
-                tile.entry_ptr = BitConverter.ToUInt32(sys, ptr + 8 + (x * 0x14));
-                tile.data_ptr = BitConverter.ToUInt32(sys, ptr + 0xC + (x * 0x14));
-                tile.data_length = BitConverter.ToUInt32(sys, ptr + 0x10 + (x * 0x14));
+                MSBTileTypeInfo tile = new MSBTileTypeInfo
+                {
+                    index = BitConverter.ToUInt32(sys, ptr + (x * 0x14)),
+                    entries = BitConverter.ToUInt32(sys, ptr + 4 + (x * 0x14)),
+                    entry_ptr = BitConverter.ToUInt32(sys, ptr + 8 + (x * 0x14)),
+                    data_ptr = BitConverter.ToUInt32(sys, ptr + 0xC + (x * 0x14)),
+                    data_length = BitConverter.ToUInt32(sys, ptr + 0x10 + (x * 0x14))
+                };
                 file.tile_data.Add(tile);
             }
 
@@ -86,19 +92,21 @@ namespace EtrianMap
                 {
                     for (int y = 0; y < tile.entries; y++)
                     {
-                        MSBTileTypeObject obj = new MSBTileTypeObject();
-                        obj.type = sys[tile.entry_ptr + y * 0x1C];
-                        obj.id = sys[tile.entry_ptr + y * 0x1C + 1];
-                        obj.graphic = sys[tile.entry_ptr + y * 0x1C + 2];
-                        obj.unknown_1 = sys[tile.entry_ptr + y * 0x1C + 3];
-                        obj.unknown_2 = sys[tile.entry_ptr + y * 0x1C + 4];
-                        obj.map_x = sys[tile.entry_ptr + y * 0x1C + 5];
-                        obj.map_y = sys[tile.entry_ptr + y * 0x1C + 6];
-                        obj.unknown_3 = sys[tile.entry_ptr + y * 0x1C + 7];
-                        obj.activation_direction_1 = sys[tile.entry_ptr + y * 0x1C + 8];
-                        obj.activation_direction_2 = sys[tile.entry_ptr + y * 0x1C + 9];
-                        obj.activation_direction_3 = sys[tile.entry_ptr + y * 0x1C + 0xA];
-                        obj.activation_direction_4 = sys[tile.entry_ptr + y * 0x1C + 0xB];
+                        MSBTileTypeObject obj = new MSBTileTypeObject
+                        {
+                            type = sys[tile.entry_ptr + y * 0x1C],
+                            id = sys[tile.entry_ptr + y * 0x1C + 1],
+                            graphic = sys[tile.entry_ptr + y * 0x1C + 2],
+                            unknown_1 = sys[tile.entry_ptr + y * 0x1C + 3],
+                            unknown_2 = sys[tile.entry_ptr + y * 0x1C + 4],
+                            map_x = sys[tile.entry_ptr + y * 0x1C + 5],
+                            map_y = sys[tile.entry_ptr + y * 0x1C + 6],
+                            unknown_3 = sys[tile.entry_ptr + y * 0x1C + 7],
+                            activation_direction_1 = sys[tile.entry_ptr + y * 0x1C + 8],
+                            activation_direction_2 = sys[tile.entry_ptr + y * 0x1C + 9],
+                            activation_direction_3 = sys[tile.entry_ptr + y * 0x1C + 0xA],
+                            activation_direction_4 = sys[tile.entry_ptr + y * 0x1C + 0xB]
+                        };
                         //This is 0x1C long! C# is just weird about consts in classes. Be careful with the indexing code later on.
                         file.tile_objects.Add(obj);
                         switch (obj.type)
@@ -142,7 +150,6 @@ namespace EtrianMap
                             case 0x19:
                                 file.containers[obj.map_x + obj.map_y * header.map_y].risers = file.containers[obj.map_x + obj.map_y * header.map_y].risers++;
                                 break;
-
                         }
                     }
                 }
@@ -156,105 +163,119 @@ namespace EtrianMap
                     case 0xE:
                         for (int x = 0; x < tile.entries; x++)
                         {
-                            MSBStaircase staircase = new MSBStaircase();
-                            staircase.dest_floor = sys[tile.data_ptr + (x * tile.data_length)];
-                            staircase.dest_x = sys[tile.data_ptr + (x * tile.data_length) + 1];
-                            staircase.dest_y = sys[tile.data_ptr + (x * tile.data_length) + 2];
-                            staircase.dest_facing = sys[tile.data_ptr + (x * tile.data_length) + 3];
-                            staircase.sfx = sys[tile.data_ptr + (x * tile.data_length) + 4];
-                            staircase.interact_message = sys[tile.data_ptr + (x * tile.data_length) + 5];
-                            staircase.unknown_1 = sys[tile.data_ptr + (x * tile.data_length) + 6];
-                            staircase.unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 7];
+                            MSBStaircase staircase = new MSBStaircase
+                            {
+                                dest_floor = sys[tile.data_ptr + (x * tile.data_length)],
+                                dest_x = sys[tile.data_ptr + (x * tile.data_length) + 1],
+                                dest_y = sys[tile.data_ptr + (x * tile.data_length) + 2],
+                                dest_facing = sys[tile.data_ptr + (x * tile.data_length) + 3],
+                                sfx = sys[tile.data_ptr + (x * tile.data_length) + 4],
+                                interact_message = sys[tile.data_ptr + (x * tile.data_length) + 5],
+                                unknown_1 = sys[tile.data_ptr + (x * tile.data_length) + 6],
+                                unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 7]
+                            };
                             file.staircases.Add(staircase);
                         }
                         break;
                     case 0xF:
                         for (int x = 0; x < tile.entries; x++)
                         {
-                            MSBChest chest = new MSBChest();
-                            chest.is_item = sys[tile.data_ptr + (x * tile.data_length)];
-                            chest.unknown_1 = sys[tile.data_ptr + (x * tile.data_length) + 1];
-                            chest.unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 2];
-                            chest.unknown_3 = sys[tile.data_ptr + (x * tile.data_length) + 3];
-                            chest.value = BitConverter.ToUInt32(sys, (int)(tile.data_ptr + (x * tile.data_length) + 4)); //This is a long unless I cast it... why?
+                            MSBChest chest = new MSBChest
+                            {
+                                is_item = sys[tile.data_ptr + (x * tile.data_length)],
+                                unknown_1 = sys[tile.data_ptr + (x * tile.data_length) + 1],
+                                unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 2],
+                                unknown_3 = sys[tile.data_ptr + (x * tile.data_length) + 3],
+                                value = BitConverter.ToUInt32(sys, (int)(tile.data_ptr + (x * tile.data_length) + 4)) //This is a long unless I cast it... why?
+                            };
                             file.chests.Add(chest);
                         }
                         break;
                     case 0x10:
                         for (int x = 0; x < tile.entries; x++)
                         {
-                            MSBTwoWayPassage two_way = new MSBTwoWayPassage();
-                            two_way.unknown_1 = sys[tile.data_ptr + (x * tile.data_length)];
-                            two_way.unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 1];
-                            two_way.unknown_3 = sys[tile.data_ptr + (x * tile.data_length) + 2];
-                            two_way.unknown_4 = sys[tile.data_ptr + (x * tile.data_length) + 3];
+                            MSBTwoWayPassage two_way = new MSBTwoWayPassage
+                            {
+                                unknown_1 = sys[tile.data_ptr + (x * tile.data_length)],
+                                unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 1],
+                                unknown_3 = sys[tile.data_ptr + (x * tile.data_length) + 2],
+                                unknown_4 = sys[tile.data_ptr + (x * tile.data_length) + 3]
+                            };
                             file.two_way_passages.Add(two_way);
                         }
                         break;
                     case 0x11:
                         for (int x = 0; x < tile.entries; x++)
                         {
-                            MSBOneWayPassage one_way = new MSBOneWayPassage();
-                            one_way.unknown_1 = sys[tile.data_ptr + (x * tile.data_length)];
-                            one_way.unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 1];
-                            one_way.unknown_3 = sys[tile.data_ptr + (x * tile.data_length) + 2];
-                            one_way.unknown_4 = sys[tile.data_ptr + (x * tile.data_length) + 3];
+                            MSBOneWayPassage one_way = new MSBOneWayPassage
+                            {
+                                unknown_1 = sys[tile.data_ptr + (x * tile.data_length)],
+                                unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 1],
+                                unknown_3 = sys[tile.data_ptr + (x * tile.data_length) + 2],
+                                unknown_4 = sys[tile.data_ptr + (x * tile.data_length) + 3]
+                            };
                             file.one_way_passages.Add(one_way);
                         }
                         break;
                     case 0x12: //This is messy 
                         for (int x = 0; x < tile.entries; x++)
                         {
-                            MSBDoodad doodad = new MSBDoodad();
-                            doodad.id_1 = sys[tile.data_ptr + (x * tile.data_length)];
-                            doodad.unknown_1_1 = sys[tile.data_ptr + (x * tile.data_length) + 1];
-                            doodad.unknown_2_1 = sys[tile.data_ptr + (x * tile.data_length) + 2];
-                            doodad.unknown_3_1 = sys[tile.data_ptr + (x * tile.data_length) + 3];
-                            doodad.id_2 = sys[tile.data_ptr + (x * tile.data_length) + 4];
-                            doodad.unknown_1_2 = sys[tile.data_ptr + (x * tile.data_length) + 5];
-                            doodad.unknown_2_2 = sys[tile.data_ptr + (x * tile.data_length) + 6];
-                            doodad.unknown_3_2 = sys[tile.data_ptr + (x * tile.data_length) + 7];
-                            doodad.id_3 = sys[tile.data_ptr + (x * tile.data_length) + 8];
-                            doodad.unknown_1_3 = sys[tile.data_ptr + (x * tile.data_length) + 9];
-                            doodad.unknown_2_3 = sys[tile.data_ptr + (x * tile.data_length) + 0xA];
-                            doodad.unknown_3_3 = sys[tile.data_ptr + (x * tile.data_length) + 0xB];
-                            doodad.id_4 = sys[tile.data_ptr + (x * tile.data_length) + 0xC];
-                            doodad.unknown_1_4 = sys[tile.data_ptr + (x * tile.data_length) + 0xD];
-                            doodad.unknown_2_4 = sys[tile.data_ptr + (x * tile.data_length) + 0xE];
-                            doodad.unknown_3_4 = sys[tile.data_ptr + (x * tile.data_length) + 0xF];
+                            MSBDoodad doodad = new MSBDoodad
+                            {
+                                id_1 = sys[tile.data_ptr + (x * tile.data_length)],
+                                unknown_1_1 = sys[tile.data_ptr + (x * tile.data_length) + 1],
+                                unknown_2_1 = sys[tile.data_ptr + (x * tile.data_length) + 2],
+                                unknown_3_1 = sys[tile.data_ptr + (x * tile.data_length) + 3],
+                                id_2 = sys[tile.data_ptr + (x * tile.data_length) + 4],
+                                unknown_1_2 = sys[tile.data_ptr + (x * tile.data_length) + 5],
+                                unknown_2_2 = sys[tile.data_ptr + (x * tile.data_length) + 6],
+                                unknown_3_2 = sys[tile.data_ptr + (x * tile.data_length) + 7],
+                                id_3 = sys[tile.data_ptr + (x * tile.data_length) + 8],
+                                unknown_1_3 = sys[tile.data_ptr + (x * tile.data_length) + 9],
+                                unknown_2_3 = sys[tile.data_ptr + (x * tile.data_length) + 0xA],
+                                unknown_3_3 = sys[tile.data_ptr + (x * tile.data_length) + 0xB],
+                                id_4 = sys[tile.data_ptr + (x * tile.data_length) + 0xC],
+                                unknown_1_4 = sys[tile.data_ptr + (x * tile.data_length) + 0xD],
+                                unknown_2_4 = sys[tile.data_ptr + (x * tile.data_length) + 0xE],
+                                unknown_3_4 = sys[tile.data_ptr + (x * tile.data_length) + 0xF]
+                            };
                             file.doodads.Add(doodad);
                         }
                         break;
                     case 0x17:
                         for (int x = 0; x < tile.entries; x++)
                         {
-                            MSBSnake snake = new MSBSnake();
-                            snake.id = sys[tile.data_ptr + (x * tile.data_length)];
-                            snake.unknown_1 = sys[tile.data_ptr + (x * tile.data_length) + 1];
-                            snake.position = sys[tile.data_ptr + (x * tile.data_length) + 2];
-                            snake.unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 3];
+                            MSBSnake snake = new MSBSnake
+                            {
+                                id = sys[tile.data_ptr + (x * tile.data_length)],
+                                unknown_1 = sys[tile.data_ptr + (x * tile.data_length) + 1],
+                                position = sys[tile.data_ptr + (x * tile.data_length) + 2],
+                                unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 3]
+                            };
                             file.snakes.Add(snake);
                         }
                         break;
                     case 0x18:
                         for (int x = 0; x < tile.entries; x++)
                         {
-                            MSBScript script = new MSBScript();
-                            script.flag_1 = BitConverter.ToUInt16(sys, (int)(tile.data_ptr + (x * tile.data_length)));
-                            script.flag_2 = BitConverter.ToUInt16(sys, (int)(tile.data_ptr + (x * tile.data_length) + 2));
-                            script.flag_3 = BitConverter.ToUInt16(sys, (int)(tile.data_ptr + (x * tile.data_length) + 4));
-                            script.required_flag = BitConverter.ToUInt16(sys, (int)(tile.data_ptr + (x * tile.data_length) + 6));
-                            script.unknown_1 = sys[tile.data_ptr + (x * tile.data_length) + 8];
-                            script.unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 9];
-                            script.unknown_3 = sys[tile.data_ptr + (x * tile.data_length) + 0xA];
-                            script.unknown_4 = sys[tile.data_ptr + (x * tile.data_length) + 0xB];
-                            script.unknown_5 = sys[tile.data_ptr + (x * tile.data_length) + 0xC];
-                            script.unknown_6 = sys[tile.data_ptr + (x * tile.data_length) + 0xD];
-                            script.unknown_7 = sys[tile.data_ptr + (x * tile.data_length) + 0xE];
-                            script.unknown_8 = sys[tile.data_ptr + (x * tile.data_length) + 0xF];
-                            script.prompt = sys[tile.data_ptr + (x * tile.data_length) + 0x10];
-                            script.unknown_9 = sys[tile.data_ptr + (x * tile.data_length) + 0x11];
-                            script.unknown_10 = BitConverter.ToUInt16(sys, (int)(tile.data_ptr + (x * tile.data_length) + 0x12));
+                            MSBScript script = new MSBScript
+                            {
+                                flag_1 = BitConverter.ToUInt16(sys, (int)(tile.data_ptr + (x * tile.data_length))),
+                                flag_2 = BitConverter.ToUInt16(sys, (int)(tile.data_ptr + (x * tile.data_length) + 2)),
+                                flag_3 = BitConverter.ToUInt16(sys, (int)(tile.data_ptr + (x * tile.data_length) + 4)),
+                                required_flag = BitConverter.ToUInt16(sys, (int)(tile.data_ptr + (x * tile.data_length) + 6)),
+                                unknown_1 = sys[tile.data_ptr + (x * tile.data_length) + 8],
+                                unknown_2 = sys[tile.data_ptr + (x * tile.data_length) + 9],
+                                unknown_3 = sys[tile.data_ptr + (x * tile.data_length) + 0xA],
+                                unknown_4 = sys[tile.data_ptr + (x * tile.data_length) + 0xB],
+                                unknown_5 = sys[tile.data_ptr + (x * tile.data_length) + 0xC],
+                                unknown_6 = sys[tile.data_ptr + (x * tile.data_length) + 0xD],
+                                unknown_7 = sys[tile.data_ptr + (x * tile.data_length) + 0xE],
+                                unknown_8 = sys[tile.data_ptr + (x * tile.data_length) + 0xF],
+                                prompt = sys[tile.data_ptr + (x * tile.data_length) + 0x10],
+                                unknown_9 = sys[tile.data_ptr + (x * tile.data_length) + 0x11],
+                                unknown_10 = BitConverter.ToUInt16(sys, (int)(tile.data_ptr + (x * tile.data_length) + 0x12))
+                            };
                             byte[] str = new byte[0x18];
                             for (int y = 0; y < 0x18; y++)
                             {
@@ -271,11 +292,13 @@ namespace EtrianMap
             for (int x = 0; x < header.map_x * header.map_y; x++)
             {
                 int ptr = header.encounter_pointer;
-                MSBCellEncounter enc = new MSBCellEncounter();
-                enc.encounter_id = BitConverter.ToUInt16(sys, ptr + (x * 8));
-                enc.danger = BitConverter.ToUInt16(sys, ptr + 2 + (x * 8));
-                enc.unknown_1 = BitConverter.ToUInt16(sys, ptr + 4 + (x * 8));
-                enc.unknown_2 = BitConverter.ToUInt16(sys, ptr + 6 + (x * 8));
+                MSBCellEncounter enc = new MSBCellEncounter
+                {
+                    encounter_id = BitConverter.ToUInt16(sys, ptr + (x * 8)),
+                    danger = BitConverter.ToUInt16(sys, ptr + 2 + (x * 8)),
+                    unknown_1 = BitConverter.ToUInt16(sys, ptr + 4 + (x * 8)),
+                    unknown_2 = BitConverter.ToUInt16(sys, ptr + 6 + (x * 8))
+                };
                 file.encounters.Add(enc);
             }
             return file;
@@ -287,13 +310,15 @@ namespace EtrianMap
             MGBFile file = new MGBFile();
 
             //Create header.
-            MGBHeader header = new MGBHeader();
-            header.map_x = BitConverter.ToInt32(gfx, 0x8);
-            header.map_y = BitConverter.ToInt32(gfx, 0xC);
-            header.layer_count = BitConverter.ToInt32(gfx, 0x10);
-            header.layer_pointer = BitConverter.ToInt32(gfx, 0x14);
-            header.filename_count = BitConverter.ToInt32(gfx, 0x18);
-            header.filename_pointer = BitConverter.ToInt32(gfx, 0x1C);
+            MGBHeader header = new MGBHeader
+            {
+                map_x = BitConverter.ToInt32(gfx, 0x8),
+                map_y = BitConverter.ToInt32(gfx, 0xC),
+                layer_count = BitConverter.ToInt32(gfx, 0x10),
+                layer_pointer = BitConverter.ToInt32(gfx, 0x14),
+                filename_count = BitConverter.ToInt32(gfx, 0x18),
+                filename_pointer = BitConverter.ToInt32(gfx, 0x1C)
+            };
             file.header = header;
 
             //Populate all layers. 
@@ -303,11 +328,13 @@ namespace EtrianMap
                 int ptr = BitConverter.ToInt32(gfx, header.layer_pointer + (x * 0x4));
                 for (int y = 0; y < (header.map_x * header.map_y); y++)
                 {
-                    MGBTile tile = new MGBTile();
-                    tile.id = gfx[ptr + (y * 4)];
-                    tile.rotation = gfx[ptr + ((y * 4) + 1)];
-                    tile.unknown_1 = gfx[ptr + ((y * 4) + 2)];
-                    tile.unknown_2 = gfx[ptr + ((y * 4) + 3)];
+                    MGBTile tile = new MGBTile
+                    {
+                        id = gfx[ptr + (y * 4)],
+                        rotation = gfx[ptr + ((y * 4) + 1)],
+                        unknown_1 = gfx[ptr + ((y * 4) + 2)],
+                        unknown_2 = gfx[ptr + ((y * 4) + 3)]
+                    };
                     layer.Add(tile);
                 }
                 file.layer_tiles.Add(layer);
@@ -316,9 +343,7 @@ namespace EtrianMap
             //Add the filename section.
             for (int x = 0; x < header.filename_count; x++)
             {
-                MGBFileIndex index = new MGBFileIndex();
-                index.index = BitConverter.ToUInt32(gfx, header.filename_pointer + (x * 0x94));
-                byte[] str = new byte[0x80];
+                byte[] str = new byte[0x80]; //We need to pack up these bytes first before we create the filename index.
                 for (int y = 0; y < 4; y++)
                 {
                     for (int z = 0; z < 0x20; z++)
@@ -326,27 +351,24 @@ namespace EtrianMap
                         str[(y * 0x20) + z] = gfx[header.filename_pointer + (x * 0x94) + 0x4 + z + (y * 0x20)];
                     }
                 }
-                index.file_1 = Encoding.ASCII.GetString(str, 0, 0x20);
-                index.file_2 = Encoding.ASCII.GetString(str, 0x20, 0x20);
-                index.file_3 = Encoding.ASCII.GetString(str, 0x40, 0x20);
-                index.file_4 = Encoding.ASCII.GetString(str, 0x60, 0x20);
-                index.file_1_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x84];
-                index.file_2_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x85];
-                index.file_3_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x86];
-                index.file_4_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x87];
-                index.unknown_1 = gfx[header.filename_pointer + (x * 0x94) + 0x88];
-                index.unknown_2 = gfx[header.filename_pointer + (x * 0x94) + 0x89];
-                index.unknown_3 = gfx[header.filename_pointer + (x * 0x94) + 0x8A];
-                index.unknown_4 = gfx[header.filename_pointer + (x * 0x94) + 0x8B];
-                index.unknown_5 = gfx[header.filename_pointer + (x * 0x94) + 0x8C];
-                index.unknown_6 = gfx[header.filename_pointer + (x * 0x94) + 0x8D];
-                index.unknown_7 = gfx[header.filename_pointer + (x * 0x94) + 0x8E];
-                index.unknown_8 = gfx[header.filename_pointer + (x * 0x94) + 0x8F];
-                index.unknown_9 = gfx[header.filename_pointer + (x * 0x94) + 0x90];
-                index.unknown_10 = gfx[header.filename_pointer + (x * 0x94) + 0x91];
-                index.unknown_11 = gfx[header.filename_pointer + (x * 0x94) + 0x92];
-                index.unknown_12 = gfx[header.filename_pointer + (x * 0x94) + 0x93];
+                MGBFileIndex index = new MGBFileIndex
+                {
+                    index = BitConverter.ToUInt32(gfx, header.filename_pointer + (x * 0x94)),
+                    file_1 = Encoding.ASCII.GetString(str, 0, 0x20),
+                    file_2 = Encoding.ASCII.GetString(str, 0x20, 0x20),
+                    file_3 = Encoding.ASCII.GetString(str, 0x40, 0x20),
+                    file_4 = Encoding.ASCII.GetString(str, 0x60, 0x20),
+                    file_1_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x84],
+                    file_2_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x85],
+                    file_3_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x86],
+                    file_4_rotation = gfx[header.filename_pointer + (x * 0x94) + 0x87],
+                    //Values 0x88 through 0x90 are explicitly set to 0 by the game code. They may be used once the map is in memory, but they have no relevance to the editor.
+                    unknown_1 = gfx[header.filename_pointer + (x * 0x94) + 0x91],
+                    unknown_2 = gfx[header.filename_pointer + (x * 0x94) + 0x92],
+                    unknown_3 = gfx[header.filename_pointer + (x * 0x94) + 0x93]
+                };
                 file.indices.Add(index);
+                globals.gfx_filenames.Add(index.file_1);
             }
 
             return file;
@@ -377,8 +399,8 @@ namespace EtrianMap
                 int tile_type_data_size = 0;
                 foreach (MSBTileTypeInfo tile in sys.tile_data) //Iterate through the tile type info to figure out how much space we need to allocate for those
                 {
-                    tile_type_data_size = tile_type_data_size + (int)(tile.entries * 0x1C); //Object entry
-                    tile_type_data_size = tile_type_data_size + (int)(tile.entries * tile.data_length); //Data entry
+                    tile_type_data_size += (int)(tile.entries * 0x1C); //Object entry
+                    tile_type_data_size += (int)(tile.entries * tile.data_length); //Data entry
                 }
                 int garbage_size = 0x68; //Same as header size...
                 int encounter_size = sys.header.map_x * sys.header.map_y * 0x8; //Number of tile encounters in the file
@@ -593,15 +615,15 @@ namespace EtrianMap
                 //After getting all the bytes in order, we need to build it into a file. It is fairly straightforward to just pour it all in, but we have to keep track of the offset.
                 int sys_ptr = 0;
                 Buffer.BlockCopy(sys_header, 0, sys_save_byte, sys_ptr, sys_header.Length * 0x4);
-                sys_ptr = sys_ptr + sys_header.Length * 0x4;
+                sys_ptr += sys_header.Length * 0x4;
                 Buffer.BlockCopy(behaviour_pointers, 0, sys_save_byte, sys_ptr, behaviour_pointers.Length * 0x4);
-                sys_ptr = sys_ptr + behaviour_pointers.Length * 0x4;
+                sys_ptr += behaviour_pointers.Length * 0x4;
                 Buffer.BlockCopy(behaviour_bytes, 0, sys_save_byte, sys_ptr, behaviour_bytes.Length);
-                sys_ptr = sys_ptr + behaviour_bytes.Length;
+                sys_ptr += behaviour_bytes.Length;
                 Buffer.BlockCopy(tile_type_data_bytes, 0, sys_save_byte, sys_ptr, tile_type_data_bytes.Length);
-                sys_ptr = sys_ptr + tile_type_data_bytes.Length;
+                sys_ptr += tile_type_data_bytes.Length;
                 Buffer.BlockCopy(sys.garbage, 0, sys_save_byte, sys_ptr, sys.garbage.Length);
-                sys_ptr = sys_ptr + sys.garbage.Length;
+                sys_ptr += sys.garbage.Length;
                 //We have to do a little more now with the lists to make sure everything is in the right order.
                 for (int x = 0; x < sys.header.tile_type_count; x++)
                 {
@@ -610,42 +632,42 @@ namespace EtrianMap
                         for (int y = 0; y < tile_type_object_list[x].Count; y++)
                         {
                             Buffer.BlockCopy(tile_type_object_list[x][y], 0, sys_save_byte, sys_ptr, tile_type_object_list[x][y].Length);
-                            sys_ptr = sys_ptr + tile_type_object_list[x][y].Length;
+                            sys_ptr += tile_type_object_list[x][y].Length;
                         }
                     }
                     switch (x)
                     {
                         case 0xE:
                             Buffer.BlockCopy(staircase_bytes, 0, sys_save_byte, sys_ptr, staircase_bytes.Length);
-                            sys_ptr = sys_ptr + staircase_bytes.Length;
+                            sys_ptr += staircase_bytes.Length;
                             break;
                         case 0xF:
                             Buffer.BlockCopy(chest_bytes, 0, sys_save_byte, sys_ptr, chest_bytes.Length);
-                            sys_ptr = sys_ptr + chest_bytes.Length;
+                            sys_ptr += chest_bytes.Length;
                             break;
                         case 0x10:
                             Buffer.BlockCopy(two_way_bytes, 0, sys_save_byte, sys_ptr, two_way_bytes.Length);
-                            sys_ptr = sys_ptr + two_way_bytes.Length;
+                            sys_ptr += two_way_bytes.Length;
                             break;
                         case 0x11:
                             Buffer.BlockCopy(one_way_bytes, 0, sys_save_byte, sys_ptr, one_way_bytes.Length);
-                            sys_ptr = sys_ptr + one_way_bytes.Length;
+                            sys_ptr += one_way_bytes.Length;
                             break;
                         case 0x12:
                             Buffer.BlockCopy(doodad_bytes, 0, sys_save_byte, sys_ptr, doodad_bytes.Length);
-                            sys_ptr = sys_ptr + doodad_bytes.Length;
+                            sys_ptr += doodad_bytes.Length;
                             break;
                         case 0x17:
                             Buffer.BlockCopy(snake_bytes, 0, sys_save_byte, sys_ptr, snake_bytes.Length);
-                            sys_ptr = sys_ptr + snake_bytes.Length;
+                            sys_ptr += snake_bytes.Length;
                             break;
                         case 0x18:
                             Buffer.BlockCopy(scripted_event_bytes, 0, sys_save_byte, sys_ptr, scripted_event_bytes.Length);
-                            sys_ptr = sys_ptr + scripted_event_bytes.Length;
+                            sys_ptr += scripted_event_bytes.Length;
                             break;
                         case 0x19:
                             Buffer.BlockCopy(rising_platform_bytes, 0, sys_save_byte, sys_ptr, rising_platform_bytes.Length);
-                            sys_ptr = sys_ptr + rising_platform_bytes.Length;
+                            sys_ptr += rising_platform_bytes.Length;
                             break;
                         default:
                             break;
@@ -715,36 +737,31 @@ namespace EtrianMap
                 for (int x = 0; x < indices; x++)
                 {
                     BitConverter.GetBytes(gfx.indices[x].index).CopyTo(filename_bytes, x * 0x94);
-                    Encoding.ASCII.GetBytes(gfx.indices[x].file_1).CopyTo(filename_bytes, x * 0x94 + 4);
-                    Encoding.ASCII.GetBytes(gfx.indices[x].file_2).CopyTo(filename_bytes, x * 0x94 + 0x24);
-                    Encoding.ASCII.GetBytes(gfx.indices[x].file_3).CopyTo(filename_bytes, x * 0x94 + 0x44);
-                    Encoding.ASCII.GetBytes(gfx.indices[x].file_4).CopyTo(filename_bytes, x * 0x94 + 0x64);
+                    Encoding.ASCII.GetBytes(gfx.indices[x].file_1.PadRight(0x20, '\x0')).CopyTo(filename_bytes, x * 0x94 + 4);
+                    Encoding.ASCII.GetBytes(gfx.indices[x].file_2.PadRight(0x20, '\x0')).CopyTo(filename_bytes, x * 0x94 + 0x24);
+                    Encoding.ASCII.GetBytes(gfx.indices[x].file_3.PadRight(0x20, '\x0')).CopyTo(filename_bytes, x * 0x94 + 0x44);
+                    Encoding.ASCII.GetBytes(gfx.indices[x].file_4.PadRight(0x20, '\x0')).CopyTo(filename_bytes, x * 0x94 + 0x64);
                     filename_bytes[x * 0x94 + 0x84] = gfx.indices[x].file_1_rotation;
                     filename_bytes[x * 0x94 + 0x85] = gfx.indices[x].file_2_rotation;
                     filename_bytes[x * 0x94 + 0x86] = gfx.indices[x].file_3_rotation;
                     filename_bytes[x * 0x94 + 0x87] = gfx.indices[x].file_4_rotation;
-                    filename_bytes[x * 0x94 + 0x88] = gfx.indices[x].unknown_1;
-                    filename_bytes[x * 0x94 + 0x89] = gfx.indices[x].unknown_2;
-                    filename_bytes[x * 0x94 + 0x8A] = gfx.indices[x].unknown_3;
-                    filename_bytes[x * 0x94 + 0x8B] = gfx.indices[x].unknown_4;
-                    filename_bytes[x * 0x94 + 0x8C] = gfx.indices[x].unknown_5;
-                    filename_bytes[x * 0x94 + 0x8D] = gfx.indices[x].unknown_6;
-                    filename_bytes[x * 0x94 + 0x8E] = gfx.indices[x].unknown_7;
-                    filename_bytes[x * 0x94 + 0x8F] = gfx.indices[x].unknown_8;
-                    filename_bytes[x * 0x94 + 0x90] = gfx.indices[x].unknown_9;
-                    filename_bytes[x * 0x94 + 0x91] = gfx.indices[x].unknown_10;
-                    filename_bytes[x * 0x94 + 0x92] = gfx.indices[x].unknown_11;
-                    filename_bytes[x * 0x94 + 0x93] = gfx.indices[x].unknown_12;
+                    for (int y = 0; x < 9; y++) //Set to 0 by the game, so these values are irrelevant in the editor. This will cause some byte-accuracy to be lost, but it's fine.
+                    {
+                        filename_bytes[x * 0x94 + 0x88 + y] = 0;
+                    }
+                    filename_bytes[x * 0x94 + 0x91] = gfx.indices[x].unknown_1;
+                    filename_bytes[x * 0x94 + 0x92] = gfx.indices[x].unknown_2;
+                    filename_bytes[x * 0x94 + 0x93] = gfx.indices[x].unknown_3;
                 }
 
                 //Build the file.
                 int gfx_ptr = 0;
                 Buffer.BlockCopy(gfx_header, 0, gfx_save_byte, gfx_ptr, gfx_header.Length * 4);
-                gfx_ptr = gfx_ptr + gfx_header.Length * 4;
+                gfx_ptr += gfx_header.Length * 4;
                 Buffer.BlockCopy(gfx_layer_pointer_bytes, 0, gfx_save_byte, gfx_ptr, gfx_layer_pointer_bytes.Length * 4);
-                gfx_ptr = gfx_ptr + gfx_layer_pointer_bytes.Length * 4;
+                gfx_ptr += gfx_layer_pointer_bytes.Length * 4;
                 Buffer.BlockCopy(layer_bytes, 0, gfx_save_byte, gfx_ptr, layer_bytes.Length);
-                gfx_ptr = gfx_ptr + layer_bytes.Length;
+                gfx_ptr += layer_bytes.Length;
                 Buffer.BlockCopy(filename_bytes, 0, gfx_save_byte, gfx_ptr, filename_bytes.Length);
 
                 //Write to GFX file.

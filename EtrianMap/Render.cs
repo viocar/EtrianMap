@@ -55,6 +55,19 @@ namespace EtrianMap
                 public static Color FOG_THIN_LINE = Color.FromArgb(207, 174, 121); //The lines are somewhat gradiented in-game, so I've picked approximations.
                 public static Color FOG_THICK_LINE = Color.FromArgb(200, 175, 122);
                 public static Color SELECTION_BOX = Color.FromArgb(255, 0, 242); //Not an EO colour.
+                public static Color HIGHLIGHT_BOX = Color.FromArgb(0, 242, 255); //Not an EO colour.
+                public static byte[,] DANGER_RGB = {
+                    { 127, 127, 127 }, { 000, 128, 255 }, { 054, 155, 201 }, { 090, 173, 166 }, { 116, 185, 139 }, { 155, 205, 100 }, 
+                    { 207, 231, 049 }, { 237, 246, 018 }, { 255, 255, 000 }, { 255, 232, 000 }, { 255, 207, 080 }, { 255, 185, 000 },
+                    { 255, 139, 000 }, { 255, 112, 000 }, { 255, 074, 000 }, { 255, 049, 000 }, { 255, 000, 000 }, { 230, 000, 000 },
+                    { 205, 000, 000 }, { 166, 000, 000 }, { 118, 000, 000 }, { 076, 000, 000,}, { 037, 000, 000 }, { 000, 000, 000,}
+                };
+                public static byte[,] DANGER_RGB2 = {
+                    { 127, 127, 127 }, { 000, 128, 255 }, { 054, 155, 201 }, { 090, 173, 166 }, { 116, 185, 139 }, { 155, 205, 100 },
+                    { 207, 231, 049 }, { 237, 246, 018 }, { 255, 255, 000 }, { 255, 232, 000 }, { 255, 207, 080 }, { 255, 185, 000 },
+                    { 255, 139, 000 }, { 255, 112, 000 }, { 255, 074, 000 }, { 255, 049, 000 }, { 255, 000, 000 }, { 230, 000, 000 },
+                    { 205, 000, 000 }, { 166, 000, 000 }, { 118, 000, 000 }, { 076, 000, 000,}, { 037, 000, 000 }, { 000, 000, 000,}
+                };
             }
             public class Icons
             {
@@ -186,6 +199,7 @@ namespace EtrianMap
                     public static Pen THIN_LINE = new Pen(Colours.THIN_LINE, LINE_THICKNESS);
                     public static Pen THICK_LINE = new Pen(Colours.THICK_LINE, LINE_THICKNESS);
                     public static Pen SELECTION = new Pen(Colours.SELECTION_BOX, LINE_THICKNESS + 1);
+                    public static Pen HIGHLIGHT = new Pen(Colours.HIGHLIGHT_BOX, LINE_THICKNESS + 1);
                 }
             }
         }
@@ -270,7 +284,9 @@ namespace EtrianMap
                                     draw_bitmap = true;
                                     break;
                                 case 0x12:
-                                    
+                                    this_bitmap = MapRender.Icons.Graphics1.EXCLAMATION_POINT; //Temporary
+                                    draw_bitmap = true;
+                                    break;
                                 case 0x14:
                                     this_bitmap = MapRender.Icons.Graphics1.GEOMAGNETIC_POLE;
                                     draw_bitmap = true;
@@ -283,6 +299,35 @@ namespace EtrianMap
                                     break;
                                 default:
                                     break;
+                            }
+                            if (cb_Type.SelectedIndex == 2) //This will override the this_brush set in the previous switch statement.
+                            {
+                                switch (globals.sys_data.behaviour_tiles[z][x + (y * globals.sys_data.header.map_x)].type)
+                                {
+                                    case 0x1:
+                                    case 0x2:
+                                    case 0x3:
+                                    case 0x4:
+                                    case 0x5:
+                                    case 0x6:
+                                    case 0x7:
+                                    case 0x8:
+                                    case 0x9:
+                                    case 0xC:
+                                    case 0x12:
+                                    case 0x16:
+                                    case 0x18:
+                                        int danger = globals.sys_data.encounters[x + (y * globals.sys_data.header.map_x)].danger;
+                                        if (danger < MapRender.Colours.DANGER_RGB.Length)
+                                        {
+                                            this_brush = new SolidBrush(Color.FromArgb(MapRender.Colours.DANGER_RGB[danger, 0], MapRender.Colours.DANGER_RGB[danger, 1], MapRender.Colours.DANGER_RGB[danger, 2]));
+                                        }
+                                        else
+                                        {
+                                            this_brush = new SolidBrush(Color.FromArgb(0, 0, 0));
+                                        }
+                                        break;
+                                }
                             }
                             if (z == 0 || (z > 0 && this_brush != MapRender.DrawingElements.Brushes.BACKGROUND)) //We want background tiles on layer 0 only.
                             {
@@ -305,7 +350,7 @@ namespace EtrianMap
                     e.Graphics.DrawLine(line,
                         new PointF
                         (
-                            MapRender.LEFT_EDGE + (x * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)) - 1, //Not entirely sure why I need - 1... quirk of the Pen system?
+                            MapRender.LEFT_EDGE + (x * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)) - 1, //Not entirely sure why I need - 1...
                             MapRender.TOP_EDGE - 1
                         ),
                         new PointF
@@ -318,7 +363,6 @@ namespace EtrianMap
                 for (int y = 0; y < globals.sys_data.header.map_y + 1; y++) //Draw horizontal lines.
                 {
                     Pen line = MapRender.DrawingElements.Pens.THIN_LINE;
-                    line = MapRender.DrawingElements.Pens.THIN_LINE;
                     if ((y + 4) % 5 == 4)
                     {
                         line = MapRender.DrawingElements.Pens.THICK_LINE;
@@ -348,6 +392,20 @@ namespace EtrianMap
                             MapRender.BOX_HEIGHT
                         );
                         e.Graphics.DrawRectangle(MapRender.DrawingElements.Pens.SELECTION, pos);
+                    }
+                }
+                if (globals.highlighted_box.Count > 0)
+                {
+                    for (int x = 0; x < globals.highlighted_box.Count; x++) //There is a way to make this nicer for boxes that share an edge but I am not spending the time doing that.
+                    {
+                        Rectangle pos = new Rectangle
+                        (
+                            MapRender.LEFT_EDGE + (globals.highlighted_box_x[x] * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)),
+                            MapRender.TOP_EDGE + (globals.highlighted_box_y[x] * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)),
+                            MapRender.BOX_WIDTH,
+                            MapRender.BOX_HEIGHT
+                        );
+                        e.Graphics.DrawRectangle(MapRender.DrawingElements.Pens.HIGHLIGHT, pos);
                     }
                 }
                 timer.Stop();

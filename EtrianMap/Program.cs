@@ -101,12 +101,14 @@ namespace EtrianMap
                                 {
                                     gfx_stream.Read(gfx_file, 0, gfx_length);
                                 }
-                                MapDatCollection entry = new MapDatCollection();
-                                entry.base_path = mapdat;
-                                entry.sys_filename = sys_list[x];
-                                entry.gfx_filename = gfx_list[x];
-                                entry.sys_file = sys_file;
-                                entry.gfx_file = gfx_file;
+                                MapDatCollection entry = new MapDatCollection
+                                {
+                                    base_path = mapdat,
+                                    sys_filename = sys_list[x],
+                                    gfx_filename = gfx_list[x],
+                                    sys_file = sys_file,
+                                    gfx_file = gfx_file
+                                };
                                 mapdat_list.Add(entry); //This feels slightly weird...
                             }
                         }

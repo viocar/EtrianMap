@@ -21,14 +21,18 @@ namespace EtrianMap
         public List<int> selected_box = new List<int>();
         public List<int> selected_box_x = new List<int>();
         public List<int> selected_box_y = new List<int>();
+        public List<int> highlighted_box = new List<int>();
+        public List<int> highlighted_box_x = new List<int>();
+        public List<int> highlighted_box_y = new List<int>();
         public Rectangle map_area = new Rectangle(); //Cannot be determined until the map is loaded.
         public List<byte[]> binaries = new List<byte[]>();
         public List<Table> tables = new List<Table>();
         public List<MBM> mbms = new List<MBM>();
-        public List<MapDatCollection> mapdat_list = new List<MapDatCollection>(); 
+        public List<MapDatCollection> mapdat_list = new List<MapDatCollection>();
         public string open_path = ""; //Initialized when a file is loaded.
         public MSBFile sys_data { get; set; }
         public MGBFile gfx_data { get; set; }
+        public List<string> gfx_filenames = new List<string>();
     }
     public class MapDatCollection
     {
@@ -223,7 +227,7 @@ namespace EtrianMap
                 }
                 else
                 {
-                    p_script_name = value;
+                    p_script_name = value.Remove(value.IndexOf('\x0'));
                 }
             }
         }
@@ -280,7 +284,7 @@ namespace EtrianMap
                 }
                 else
                 {
-                    p_file_1 = value;
+                    p_file_1 = value.Remove(value.IndexOf('\x0'));
                 }
             }
         }
@@ -299,7 +303,7 @@ namespace EtrianMap
                 }
                 else
                 {
-                    p_file_2 = value;
+                    p_file_2 = value.Remove(value.IndexOf('\x0'));
                 }
             }
         }
@@ -318,7 +322,7 @@ namespace EtrianMap
                 }
                 else
                 {
-                    p_file_3 = value;
+                    p_file_3 = value.Remove(value.IndexOf('\x0'));
                 }
             }
         }
@@ -337,7 +341,7 @@ namespace EtrianMap
                 }
                 else
                 {
-                    p_file_4 = value;
+                    p_file_4 = value.Remove(value.IndexOf('\x0'));
                 }
             }
         }
@@ -345,17 +349,17 @@ namespace EtrianMap
         public byte file_2_rotation { get; set; } = 0;
         public byte file_3_rotation { get; set; } = 0;
         public byte file_4_rotation { get; set; } = 0;
+        public const byte UNUSED_1 = 0;
+        public const byte UNUSED_2 = 0;
+        public const byte UNUSED_3 = 0;
+        public const byte UNUSED_4 = 0;
+        public const byte UNUSED_5 = 0;
+        public const byte UNUSED_6 = 0;
+        public const byte UNUSED_7 = 0;
+        public const byte UNUSED_8 = 0;
+        public const byte UNUSED_9 = 0;
         public byte unknown_1 { get; set; } = 0;
         public byte unknown_2 { get; set; } = 0;
         public byte unknown_3 { get; set; } = 0;
-        public byte unknown_4 { get; set; } = 0;
-        public byte unknown_5 { get; set; } = 0;
-        public byte unknown_6 { get; set; } = 0;
-        public byte unknown_7 { get; set; } = 0;
-        public byte unknown_8 { get; set; } = 0;
-        public byte unknown_9 { get; set; } = 0;
-        public byte unknown_10 { get; set; } = 0;
-        public byte unknown_11 { get; set; } = 0;
-        public byte unknown_12 { get; set; } = 0;
     }
 }
