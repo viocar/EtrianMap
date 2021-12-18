@@ -17,6 +17,7 @@ namespace EtrianMap
 {
     public class Globals
     {
+        //Handle certain UI elements.
         public int open_map = -1;
         public List<int> selected_box = new List<int>();
         public List<int> selected_box_x = new List<int>();
@@ -24,6 +25,9 @@ namespace EtrianMap
         public List<int> highlighted_box = new List<int>();
         public List<int> highlighted_box_x = new List<int>();
         public List<int> highlighted_box_y = new List<int>();
+        public Dictionary<int, int> encounts = new Dictionary<int, int>();
+
+        //Map data.
         public Rectangle map_area = new Rectangle(); //Cannot be determined until the map is loaded.
         public List<byte[]> binaries = new List<byte[]>();
         public List<Table> tables = new List<Table>();
@@ -33,6 +37,7 @@ namespace EtrianMap
         public MSBFile sys_data { get; set; }
         public MGBFile gfx_data { get; set; }
         public List<string> gfx_filenames = new List<string>();
+        public object old_dgv_value;
     }
     public class MapDatCollection
     {

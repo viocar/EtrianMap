@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D; //For LinearGradientBrush
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,7 +26,7 @@ namespace EtrianMap
             public const int LEFT_EDGE = 15;
             public const int BOX_WIDTH = 19;
             public const int BOX_HEIGHT = 19;
-            public const int LINE_THICKNESS = 2;
+            public const int LINE_THICKNESS = 1;
             public class Colours
             {
                 //All the default tile colours.
@@ -54,19 +55,33 @@ namespace EtrianMap
                 public static Color FOG_LIGHT_GREEN_TILE = Color.FromArgb(152, 199, 140); //EON only.
                 public static Color FOG_THIN_LINE = Color.FromArgb(207, 174, 121); //The lines are somewhat gradiented in-game, so I've picked approximations.
                 public static Color FOG_THICK_LINE = Color.FromArgb(200, 175, 122);
-                public static Color SELECTION_BOX = Color.FromArgb(255, 0, 242); //Not an EO colour.
-                public static Color HIGHLIGHT_BOX = Color.FromArgb(0, 242, 255); //Not an EO colour.
-                public static byte[,] DANGER_RGB = {
+                public static Color SELECTION_BOX = Color.FromArgb(127, 0, 255); //Not an EO colour.
+                public static Color HIGHLIGHT_BOX = Color.FromArgb(255, 127, 0); //Not an EO colour.             
+                public static byte[,] DANGER_RGB = //First palette. Didn't look good.
+                { 
                     { 127, 127, 127 }, { 000, 128, 255 }, { 054, 155, 201 }, { 090, 173, 166 }, { 116, 185, 139 }, { 155, 205, 100 }, 
                     { 207, 231, 049 }, { 237, 246, 018 }, { 255, 255, 000 }, { 255, 232, 000 }, { 255, 207, 080 }, { 255, 185, 000 },
                     { 255, 139, 000 }, { 255, 112, 000 }, { 255, 074, 000 }, { 255, 049, 000 }, { 255, 000, 000 }, { 230, 000, 000 },
                     { 205, 000, 000 }, { 166, 000, 000 }, { 118, 000, 000 }, { 076, 000, 000,}, { 037, 000, 000 }, { 000, 000, 000,}
                 };
-                public static byte[,] DANGER_RGB2 = {
-                    { 127, 127, 127 }, { 000, 128, 255 }, { 054, 155, 201 }, { 090, 173, 166 }, { 116, 185, 139 }, { 155, 205, 100 },
-                    { 207, 231, 049 }, { 237, 246, 018 }, { 255, 255, 000 }, { 255, 232, 000 }, { 255, 207, 080 }, { 255, 185, 000 },
-                    { 255, 139, 000 }, { 255, 112, 000 }, { 255, 074, 000 }, { 255, 049, 000 }, { 255, 000, 000 }, { 230, 000, 000 },
+                public static byte[,] DANGER_RGB2 = //Second palette. Also didn't look good.
+                { 
+                    { 000, 128, 255 }, { 046, 128, 255 }, { 094, 128, 255 }, { 140, 128, 255 }, { 182, 128, 255 }, { 225, 128, 255 },
+                    { 255, 128, 255 }, { 255, 128, 218 }, { 255, 128, 176 }, { 255, 128, 134 }, { 255, 128, 090 }, { 255, 128, 048 },
+                    { 255, 128, 008 }, { 255, 112, 000 }, { 255, 074, 000 }, { 255, 049, 000 }, { 255, 000, 000 }, { 230, 000, 000 },
                     { 205, 000, 000 }, { 166, 000, 000 }, { 118, 000, 000 }, { 076, 000, 000,}, { 037, 000, 000 }, { 000, 000, 000,}
+                };
+                public static byte[,] DANGER_RGB3 = //Third palette. Still doesn't look good, but it'll do.
+                {
+                    { 127, 127, 127 }, { 000, 255, 000 }, { 000, 255, 145 }, { 000, 225, 225 }, { 000, 154, 222 }, { 000, 068, 228 },
+                    { 114, 093, 220 }, { 204, 115, 242 }, { 255, 137, 247 }, { 255, 180, 203 }, { 255, 175, 155 }, { 255, 170, 127 },
+                    { 255, 162, 099 }, { 255, 141, 068 }, { 255, 110, 036 }, { 245, 091, 000 }, { 228, 073, 000 }, { 201, 018, 000 },
+                    { 162, 000, 000 }, { 123, 000, 000 }, { 050, 000, 000 }, { 000, 000, 000 }
+                };
+                public static byte[,] GROUP_RGB =
+                {
+                    { 255, 128, 000 }, { 000, 128, 255 }, { 000, 255, 000 }, { 192, 128, 192 }, { 096, 096, 096 }, { 192, 192, 192 }, 
+                    { 128, 000, 255 }, { 192, 255, 192 }, { 255, 192, 192 }, { 192, 192, 255 }, { 192, 192, 000 }, { 000, 192, 192 } //It shouldn't need more than this but there'll be a fallback.
                 };
             }
             public class Icons
@@ -199,7 +214,7 @@ namespace EtrianMap
                     public static Pen THIN_LINE = new Pen(Colours.THIN_LINE, LINE_THICKNESS);
                     public static Pen THICK_LINE = new Pen(Colours.THICK_LINE, LINE_THICKNESS);
                     public static Pen SELECTION = new Pen(Colours.SELECTION_BOX, LINE_THICKNESS + 1);
-                    public static Pen HIGHLIGHT = new Pen(Colours.HIGHLIGHT_BOX, LINE_THICKNESS + 1);
+                    public static Pen HIGHLIGHT = new Pen(Colours.HIGHLIGHT_BOX, LINE_THICKNESS + 1); //Thinner than the selection box so you can see highlights and selections at the same time.
                 }
             }
         }
@@ -300,33 +315,81 @@ namespace EtrianMap
                                 default:
                                     break;
                             }
-                            if (cb_Type.SelectedIndex == 2) //This will override the this_brush set in the previous switch statement.
+                            if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Encounters) //This will override the this_brush set in the previous switch statement.
                             {
-                                switch (globals.sys_data.behaviour_tiles[z][x + (y * globals.sys_data.header.map_x)].type)
+                                if (cb_Subtype.SelectedIndex == 0) //Unfortunately, I need to duplicate the switch here to handle high ground.
                                 {
-                                    case 0x1:
-                                    case 0x2:
-                                    case 0x3:
-                                    case 0x4:
-                                    case 0x5:
-                                    case 0x6:
-                                    case 0x7:
-                                    case 0x8:
-                                    case 0x9:
-                                    case 0xC:
-                                    case 0x12:
-                                    case 0x16:
-                                    case 0x18:
-                                        int danger = globals.sys_data.encounters[x + (y * globals.sys_data.header.map_x)].danger;
-                                        if (danger < MapRender.Colours.DANGER_RGB.Length)
+                                    int encounter = globals.sys_data.encounters[x + (y * globals.sys_data.header.map_x)].encounter_id;
+                                    if (globals.encounts.ContainsKey(encounter))
+                                    {
+                                        if (globals.encounts[encounter] < MapRender.Colours.GROUP_RGB.Length / 3) //Floors really shouldn't have more than 12, so this fallback should rarely be tripped.
                                         {
-                                            this_brush = new SolidBrush(Color.FromArgb(MapRender.Colours.DANGER_RGB[danger, 0], MapRender.Colours.DANGER_RGB[danger, 1], MapRender.Colours.DANGER_RGB[danger, 2]));
+                                            switch (globals.sys_data.behaviour_tiles[0][x + (y * globals.sys_data.header.map_x)].type) //Take layer 0's tile only.
+                                            {
+                                                case 0x1:
+                                                case 0x2:
+                                                case 0x3:
+                                                case 0x4:
+                                                case 0x5:
+                                                case 0x6:
+                                                case 0x7:
+                                                case 0x8:
+                                                case 0x9:
+                                                case 0x12:
+                                                case 0x16:
+                                                case 0x18:
+                                                    this_brush = new SolidBrush(Color.FromArgb
+                                                    (
+                                                        MapRender.Colours.GROUP_RGB[globals.encounts[encounter], 0],
+                                                        MapRender.Colours.GROUP_RGB[globals.encounts[encounter], 1],
+                                                        MapRender.Colours.GROUP_RGB[globals.encounts[encounter], 2]
+                                                    ));
+                                                    break;
+                                                case 0xC: //Lighten the palette slightly for high ground tiles.
+                                                    this_brush = new SolidBrush(Color.FromArgb //Ternaries, man...
+                                                    (
+                                                        MapRender.Colours.GROUP_RGB[globals.encounts[encounter], 0] + 64 <= 255 ? MapRender.Colours.GROUP_RGB[globals.encounts[encounter], 0] + 64 : 255,
+                                                        MapRender.Colours.GROUP_RGB[globals.encounts[encounter], 1] + 64 <= 255 ? MapRender.Colours.GROUP_RGB[globals.encounts[encounter], 1] + 64 : 255,
+                                                        MapRender.Colours.GROUP_RGB[globals.encounts[encounter], 2] + 64 <= 255 ? MapRender.Colours.GROUP_RGB[globals.encounts[encounter], 2] + 64 : 255
+                                                    ));
+                                                    break;
+                                            }
                                         }
-                                        else
+                                    }
+                                }
+                                else if (cb_Subtype.SelectedIndex == 1)
+                                {
+                                    int danger = globals.sys_data.encounters[x + (y * globals.sys_data.header.map_x)].danger;
+                                    if (danger <= 20)
+                                    {
+                                        switch (globals.sys_data.behaviour_tiles[0][x + (y * globals.sys_data.header.map_x)].type) //Take layer 0's tile only.
                                         {
-                                            this_brush = new SolidBrush(Color.FromArgb(0, 0, 0));
+                                            case 0x1:
+                                            case 0x2:
+                                            case 0x3:
+                                            case 0x4:
+                                            case 0x5:
+                                            case 0x6:
+                                            case 0x7:
+                                            case 0x8:
+                                            case 0x9:
+                                            case 0xC:
+                                            case 0x12:
+                                            case 0x16:
+                                            case 0x18:
+                                                this_brush = new SolidBrush(Color.FromArgb
+                                                (
+                                                    MapRender.Colours.DANGER_RGB3[danger, 0],
+                                                    MapRender.Colours.DANGER_RGB3[danger, 1],
+                                                    MapRender.Colours.DANGER_RGB3[danger, 2]
+                                                ));
+                                                break;
                                         }
-                                        break;
+                                    }
+                                    else
+                                    {
+                                        this_brush = new SolidBrush(Color.Black);
+                                    }
                                 }
                             }
                             if (z == 0 || (z > 0 && this_brush != MapRender.DrawingElements.Brushes.BACKGROUND)) //We want background tiles on layer 0 only.
@@ -380,9 +443,23 @@ namespace EtrianMap
                         )
                     );
                 }
+                if (globals.highlighted_box.Count > 0)
+                {
+                    for (int x = 0; x < globals.highlighted_box.Count; x++)
+                    {
+                        Rectangle pos = new Rectangle
+                        (
+                            MapRender.LEFT_EDGE + (globals.highlighted_box_x[x] * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)),
+                            MapRender.TOP_EDGE + (globals.highlighted_box_y[x] * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)),
+                            MapRender.BOX_WIDTH,
+                            MapRender.BOX_HEIGHT
+                        );
+                        e.Graphics.DrawRectangle(MapRender.DrawingElements.Pens.HIGHLIGHT, pos);
+                    }
+                }
                 if (globals.selected_box.Count > 0)
                 {
-                    for (int x = 0; x < globals.selected_box.Count; x++) //There is a way to make this nicer for boxes that share an edge but I am not spending the time doing that.
+                    for (int x = 0; x < globals.selected_box.Count; x++)
                     {
                         Rectangle pos = new Rectangle
                         (
@@ -394,18 +471,71 @@ namespace EtrianMap
                         e.Graphics.DrawRectangle(MapRender.DrawingElements.Pens.SELECTION, pos);
                     }
                 }
-                if (globals.highlighted_box.Count > 0)
+                if (globals.highlighted_box.Count > 0 && globals.selected_box.Count > 0) //This just kinda has to render on top of the other boxes.
                 {
                     for (int x = 0; x < globals.highlighted_box.Count; x++) //There is a way to make this nicer for boxes that share an edge but I am not spending the time doing that.
                     {
-                        Rectangle pos = new Rectangle
-                        (
-                            MapRender.LEFT_EDGE + (globals.highlighted_box_x[x] * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)),
-                            MapRender.TOP_EDGE + (globals.highlighted_box_y[x] * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)),
-                            MapRender.BOX_WIDTH,
-                            MapRender.BOX_HEIGHT
-                        );
-                        e.Graphics.DrawRectangle(MapRender.DrawingElements.Pens.HIGHLIGHT, pos);
+                        if (globals.highlighted_box.Count > globals.selected_box.Count) //Don't really feel great about this code here. It's a lot of work to get highlighted + selected boxes playing nicely.
+                        {
+                            for (int y = 0; y < globals.selected_box.Count; y++)
+                            {
+                                if ((globals.highlighted_box_x[x] == globals.selected_box_x[y]) && (globals.highlighted_box_y[x] == globals.selected_box_y[y]))
+                                {
+                                    Rectangle pos = new Rectangle
+                                    (
+                                    MapRender.LEFT_EDGE + (globals.highlighted_box_x[x] * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)),
+                                        MapRender.TOP_EDGE + (globals.highlighted_box_y[x] * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)),
+                                        MapRender.BOX_WIDTH,
+                                        MapRender.BOX_HEIGHT
+                                    );
+                                    //Making a gradient is a pain in the ass...
+                                    Rectangle brush_rect = new Rectangle
+                                    (
+                                        MapRender.LEFT_EDGE + (globals.highlighted_box_x[x] * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS) - 1),
+                                        MapRender.TOP_EDGE + (globals.highlighted_box_y[x] * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)),
+                                        MapRender.BOX_WIDTH + 3,
+                                        MapRender.BOX_HEIGHT
+                                    );
+                                    using (LinearGradientBrush brush = new LinearGradientBrush(brush_rect, MapRender.Colours.HIGHLIGHT_BOX, MapRender.Colours.SELECTION_BOX, LinearGradientMode.Horizontal))
+                                    {
+                                        using (Pen pen = new Pen(brush, MapRender.LINE_THICKNESS + 1))
+                                        {
+                                            e.Graphics.DrawRectangle(pen, pos);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (globals.selected_box.Count >= globals.highlighted_box.Count)
+                        {
+                            for (int y = 0; y < globals.highlighted_box.Count; y++)
+                            {
+                                if ((globals.selected_box_x[x] == globals.highlighted_box_x[y]) && (globals.selected_box_y[x] == globals.highlighted_box_y[y]))
+                                {
+                                    Rectangle pos = new Rectangle
+                                    (
+                                        MapRender.LEFT_EDGE + (globals.selected_box_x[x] * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS)),
+                                        MapRender.TOP_EDGE + (globals.selected_box_y[x] * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)),
+                                        MapRender.BOX_WIDTH,
+                                        MapRender.BOX_HEIGHT
+                                    );
+                                    Rectangle brush_rect = new Rectangle
+                                    (
+                                        MapRender.LEFT_EDGE + (globals.selected_box_x[x] * (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS) - 1),
+                                        MapRender.TOP_EDGE + (globals.selected_box_y[x] * (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS)),
+                                        MapRender.BOX_WIDTH + 3,
+                                        MapRender.BOX_HEIGHT
+                                    );
+                                    using (LinearGradientBrush brush = new LinearGradientBrush(brush_rect, MapRender.Colours.HIGHLIGHT_BOX, MapRender.Colours.SELECTION_BOX, LinearGradientMode.Horizontal))
+                                    {
+                                        using (Pen pen = new Pen(brush, MapRender.LINE_THICKNESS + 1))
+                                        {
+                                            e.Graphics.DrawRectangle(pen, pos);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 timer.Stop();

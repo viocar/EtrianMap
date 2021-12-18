@@ -48,6 +48,7 @@
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.customizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.tORTURETESTToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.indexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -60,6 +61,7 @@
             this.pn_RadioButtons = new System.Windows.Forms.Panel();
             this.dgv_Data = new System.Windows.Forms.DataGridView();
             this.cb_Subtype = new System.Windows.Forms.ComboBox();
+            this.lb_Error = new System.Windows.Forms.Label();
             this.menuStrip.SuspendLayout();
             this.pn_RadioButtons.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgv_Data)).BeginInit();
@@ -206,7 +208,8 @@
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.customizeToolStripMenuItem,
-            this.optionsToolStripMenuItem});
+            this.optionsToolStripMenuItem,
+            this.tORTURETESTToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.toolsToolStripMenuItem.Text = "&Tools";
@@ -214,14 +217,20 @@
             // customizeToolStripMenuItem
             // 
             this.customizeToolStripMenuItem.Name = "customizeToolStripMenuItem";
-            this.customizeToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
+            this.customizeToolStripMenuItem.Size = new System.Drawing.Size(145, 22);
             this.customizeToolStripMenuItem.Text = "&Customize";
             // 
             // optionsToolStripMenuItem
             // 
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
-            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
+            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(145, 22);
             this.optionsToolStripMenuItem.Text = "&Options";
+            // 
+            // tORTURETESTToolStripMenuItem
+            // 
+            this.tORTURETESTToolStripMenuItem.Name = "tORTURETESTToolStripMenuItem";
+            this.tORTURETESTToolStripMenuItem.Size = new System.Drawing.Size(145, 22);
+            this.tORTURETESTToolStripMenuItem.Text = "sorry nothing";
             // 
             // helpToolStripMenuItem
             // 
@@ -308,11 +317,17 @@
             // 
             // dgv_Data
             // 
+            this.dgv_Data.AllowUserToAddRows = false;
+            this.dgv_Data.AllowUserToDeleteRows = false;
+            this.dgv_Data.AllowUserToResizeColumns = false;
+            this.dgv_Data.AllowUserToResizeRows = false;
             this.dgv_Data.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgv_Data.Location = new System.Drawing.Point(761, 37);
+            this.dgv_Data.Location = new System.Drawing.Point(727, 38);
             this.dgv_Data.Name = "dgv_Data";
-            this.dgv_Data.Size = new System.Drawing.Size(811, 657);
+            this.dgv_Data.Size = new System.Drawing.Size(845, 601);
             this.dgv_Data.TabIndex = 10;
+            this.dgv_Data.CellEnter += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgv_Data_CellEnter);
+            this.dgv_Data.CellValidating += new System.Windows.Forms.DataGridViewCellValidatingEventHandler(this.dgv_Data_CellValidating);
             this.dgv_Data.SelectionChanged += new System.EventHandler(this.dgv_Data_SelectionChanged);
             // 
             // cb_Subtype
@@ -324,11 +339,22 @@
             this.cb_Subtype.TabIndex = 11;
             this.cb_Subtype.SelectedIndexChanged += new System.EventHandler(this.cb_Subtype_SelectedIndexChanged);
             // 
+            // lb_Error
+            // 
+            this.lb_Error.AutoSize = true;
+            this.lb_Error.Location = new System.Drawing.Point(724, 16);
+            this.lb_Error.Name = "lb_Error";
+            this.lb_Error.Size = new System.Drawing.Size(97, 13);
+            this.lb_Error.TabIndex = 12;
+            this.lb_Error.Text = "Value not updated!";
+            this.lb_Error.Visible = false;
+            // 
             // EtrianMap
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1584, 711);
+            this.ClientSize = new System.Drawing.Size(1584, 651);
+            this.Controls.Add(this.lb_Error);
             this.Controls.Add(this.cb_Subtype);
             this.Controls.Add(this.dgv_Data);
             this.Controls.Add(this.Save);
@@ -384,6 +410,8 @@
         private System.Windows.Forms.Panel pn_RadioButtons;
         private System.Windows.Forms.DataGridView dgv_Data;
         private System.Windows.Forms.ComboBox cb_Subtype;
+        private System.Windows.Forms.ToolStripMenuItem tORTURETESTToolStripMenuItem;
+        private System.Windows.Forms.Label lb_Error;
     }
 }
 

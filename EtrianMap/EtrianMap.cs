@@ -18,12 +18,50 @@ namespace EtrianMap
     public partial class EtrianMap : Form
     {
         //Constants that are used in the main form's UI.
-        readonly string[] SYS_CONTROLS = { "Tiles", "Objects", "Encounters" }; //Is there somewhere else I should be putting this code?
+        readonly string[] SYS_CONTROLS = { "Tiles", "Objects", "Tile Data", "Encounters" }; //Is there somewhere else I should be putting this code?
         readonly string[] SYS_TILES_CONTROLS = { "Layer 1", "Layer 2", "Layer 3", "Layer 4", "Layer 5", "Layer 6", "Layer 7", "Layer 8", "Layer 9", "Layer 10", };
         readonly string[] SYS_OBJECTS_CONTROLS = { "Doors", "Staircases", "Chests", "Two-way passages", "One-way passages", "Doodads", "Pits", "Geomagnetic poles", "Unknown", "Currents", "Moving platforms", "Scripted events", "Rising platforms" };
-        readonly string[] SYS_ENCOUNTERS_CONTROLS = { "Encounter groups", "Monster groups" };
+        readonly string[] SYS_ENCOUNTERS_CONTROLS = { "Encounter groups", "Danger" };
         readonly string[] GFX_CONTROLS = { "Layers", "Filenames" };
         readonly string[] GFX_LAYERS_CONTROLS = { "Layer 1", "Layer 2", "Layer 3", "Layer 4", "Layer 5", "Layer 6", "Layer 7", "Layer 8", "Layer 9", "Layer 10", };
+        enum SYS_SELECTIONS //I won't be using enums for the subselections because they are data-complete, while the main selections could be broken out into further subdivisions.
+        {
+            Tiles,
+            Objects,
+            TileData,
+            Encounters
+        }
+        enum GFX_SELECTIONS
+        {
+            Layers,
+            Filenames
+        }
+        enum SYS_TILES_SELECTIONS
+        {
+            Doors,
+            Staircases,
+            Chests,
+            TwoWays,
+            OneWays,
+            Doodads,
+            Pits,
+            Poles,
+            Unknown,
+            Currents,
+            MovingPlatforms,
+            ScriptedEvents,
+            RisingPlatforms
+        }
+        enum VALIDATOR_TYPES
+        {
+            u8,
+            s8,
+            u16,
+            s16,
+            u32,
+            s32,
+            str,
+        }
         const int COLUMN_WIDTH_NARROW = 45;
         const int COLUMN_WIDTH_MEDIUM = 80;
         const int COLUMN_WIDTH_WIDE = 115;
@@ -43,12 +81,18 @@ namespace EtrianMap
                 globals.mapdat_list = mapdat_list;
                 globals.open_path = open_path;
                 globals.open_map = open_map;
+                this.Text = "EtrianMap - " + globals.open_path + "\\" + globals.mapdat_list[open_map].sys_filename;
                 globals.sys_data = BuildInitialMapData();
                 globals.gfx_data = BuildInitialGfxData();
+                globals.encounts = BuildEncountList();
+                foreach (KeyValuePair<int, int> x in globals.encounts)
+                {
+                    Debug.WriteLine(x);
+                }
                 globals.map_area = new Rectangle(
-                    MapRender.LEFT_EDGE, 
-                    MapRender.TOP_EDGE, 
-                    (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS) * globals.sys_data.header.map_x, 
+                    MapRender.LEFT_EDGE,
+                    MapRender.TOP_EDGE,
+                    (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS) * globals.sys_data.header.map_x,
                     (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS) * globals.sys_data.header.map_y
                 );
                 rb_Sys.Checked = true;
@@ -81,6 +125,58 @@ namespace EtrianMap
             }
         }
 
+        //Switch the UI.
+        private void rb_Sys_CheckedChanged(object sender, EventArgs e)
+        {
+            cb_Type.DataSource = SYS_CONTROLS;
+            cb_Type.BindingContext = new BindingContext();
+            cb_Subtype.DataSource = SYS_TILES_CONTROLS;
+            cb_Subtype.BindingContext = new BindingContext();
+            Invalidate();
+        }
+
+        //Switch the UI.
+        private void rb_Gfx_CheckedChanged(object sender, EventArgs e)
+        {
+            cb_Type.DataSource = GFX_CONTROLS;
+            cb_Type.BindingContext = new BindingContext();
+            cb_Subtype.DataSource = GFX_LAYERS_CONTROLS;
+            cb_Subtype.BindingContext = new BindingContext();
+            Invalidate();
+        }
+
+        //This handles the dropdown lists to change the DataGridView.
+        private void cb_Type_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (rb_Sys.Checked) //The GFX file has only one subtype menu so there's no need to switch here.
+            {
+                if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Tiles)
+                {
+                    cb_Subtype.DataSource = SYS_TILES_CONTROLS;
+                    cb_Subtype.BindingContext = new BindingContext();
+                }
+                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Objects)
+                {
+                    cb_Subtype.DataSource = SYS_OBJECTS_CONTROLS;
+                    cb_Subtype.BindingContext = new BindingContext();
+                }
+                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Encounters)
+                {
+                    cb_Subtype.DataSource = SYS_ENCOUNTERS_CONTROLS;
+                    cb_Subtype.BindingContext = new BindingContext();
+                }
+            }
+            BuildDataGridView();
+            Invalidate();
+        }
+
+        //And this is for the subtype.
+        private void cb_Subtype_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            BuildDataGridView();
+            Invalidate();
+        }
+
         //Handle clicks on the map.
         private void EtrianMap_MouseClick(object sender, MouseEventArgs e) //This also runs on MouseDoubleClick since this didn't fire if I double clicked. What is the better way?
         {
@@ -89,11 +185,13 @@ namespace EtrianMap
             {
                 if (ModifierKeys != Keys.Control)
                 {
-                    globals.selected_box.Clear();
+                    if (rb_Sys.Checked && (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Tiles || cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Encounters || cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Layers))
+                    {
+                        dgv_Data.Rows.Clear(); //Some views don't want to clear the rows here.
+                    }
+                    globals.selected_box.Clear(); //Make sure we clear the rows before clearing the selection boxes or else we'll mess it up.
                     globals.selected_box_x.Clear();
                     globals.selected_box_y.Clear();
-                    dgv_Data.Rows.Clear();
-
                 }
                 int box_x = (mouse_pos.X - MapRender.LEFT_EDGE) / (MapRender.BOX_WIDTH + MapRender.LINE_THICKNESS);
                 int box_y = (mouse_pos.Y - MapRender.TOP_EDGE) / (MapRender.BOX_HEIGHT + MapRender.LINE_THICKNESS);
@@ -108,22 +206,25 @@ namespace EtrianMap
                 else
                 {
                     int remove_index = globals.selected_box.IndexOf(box_x + box_y * globals.sys_data.header.map_x);
+                    if (rb_Sys.Checked && (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Tiles || cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Encounters || cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Layers))
+                    {
+                        RemoveRowFromDataGridView(remove_index);
+                    }
                     globals.selected_box.RemoveAt(remove_index);
                     globals.selected_box_x.RemoveAt(remove_index);
                     globals.selected_box_y.RemoveAt(remove_index);
-                    Debug.WriteLine(globals.selected_box.Count);
-                    RemoveRowFromDataGridView(remove_index);
                 }
                 Invalidate();
             }
         }
 
+        //Highlight selected areas on the map.
         private void dgv_Data_SelectionChanged(object sender, EventArgs e)
         {
             globals.highlighted_box.Clear();
             globals.highlighted_box_x.Clear();
             globals.highlighted_box_y.Clear();
-            if (cb_Type.SelectedIndex == 1 && dgv_Data.SelectedCells.Count > 0)
+            if (rb_Gfx.Checked && cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Filenames && dgv_Data.SelectedCells.Count > 0)
             {
                 List<int> highlight = new List<int>();
                 for (int x = 0; x < dgv_Data.SelectedCells.Count; x++)
@@ -153,52 +254,85 @@ namespace EtrianMap
                 Invalidate();
             }
         }
-        private void rb_Sys_CheckedChanged(object sender, EventArgs e)
-        {
-            cb_Type.DataSource = SYS_CONTROLS;
-            cb_Type.BindingContext = new BindingContext();
-            cb_Subtype.DataSource = SYS_TILES_CONTROLS;
-            cb_Subtype.BindingContext = new BindingContext();
-            Invalidate();
-        }
 
-        private void rb_Gfx_CheckedChanged(object sender, EventArgs e)
+        //Update values upon input.
+        private void dgv_Data_CellValidating(object sender, DataGridViewCellValidatingEventArgs e) //Making sure the data we enter is value.
         {
-            cb_Type.DataSource = GFX_CONTROLS;
-            cb_Type.BindingContext = new BindingContext();
-            cb_Subtype.DataSource = GFX_LAYERS_CONTROLS;
-            cb_Subtype.BindingContext = new BindingContext();
-            Invalidate();
-        }
-
-        private void cb_Type_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (rb_Sys.Checked) //The GFX file has only one subtype menu so there's no need to switch here.
+            if (rb_Sys.Checked == true) //SYS is selected.
             {
-                if (cb_Type.SelectedIndex == 0)
+                if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Tiles) //"Tiles" is selected.
                 {
-                    cb_Subtype.DataSource = SYS_TILES_CONTROLS;
-                    cb_Subtype.BindingContext = new BindingContext();
-                }
-                else if (cb_Type.SelectedIndex == 1)
-                {
-                    cb_Subtype.DataSource = SYS_OBJECTS_CONTROLS;
-                    cb_Subtype.BindingContext = new BindingContext();
-                }
-                else if (cb_Type.SelectedIndex == 2)
-                {
-                    cb_Subtype.DataSource = SYS_ENCOUNTERS_CONTROLS;
-                    cb_Subtype.BindingContext = new BindingContext();
+                    if (e.ColumnIndex == 2) //Type
+                    {
+                        (bool, object) result = TypeValidator(e.FormattedValue.ToString(), VALIDATOR_TYPES.u8);
+                        if (result.Item1 == true)
+                        {
+                            Debug.WriteLine(e.RowIndex);
+                            globals.sys_data.behaviour_tiles[cb_Subtype.SelectedIndex][globals.selected_box[e.RowIndex]].type = (byte)result.Item2;
+                        }
+                        else
+                        {
+                            FailEdit(e);
+                        }
+                    }
+                    else if (e.ColumnIndex == 3) //Type
+                    {
+                        (bool, object) result = TypeValidator(e.FormattedValue.ToString(), VALIDATOR_TYPES.u8);
+                        if (result.Item1 == true)
+                        {
+                            Debug.WriteLine(e.RowIndex);
+                            globals.sys_data.behaviour_tiles[cb_Subtype.SelectedIndex][globals.selected_box[e.RowIndex]].id = (byte)result.Item2;
+                        }
+                        else
+                        {
+                            FailEdit(e);
+                        }
+                    }
                 }
             }
-            Invalidate();
-            BuildDataGridView();
+        }
+        private void dgv_Data_CellEnter(object sender, DataGridViewCellEventArgs e) //This is used for types that display map-wide lists of values rather than individual cell values.
+        {
+            if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Objects) //"Objects" is selected.
+            {
+                List<int> selected_rows = new List<int>();
+                globals.selected_box.Clear();
+                globals.selected_box_x.Clear();
+                globals.selected_box_y.Clear();
+                foreach (DataGridViewCell cell in dgv_Data.SelectedCells) //The easy way, but also the slow way.
+                {
+                    int row = cell.RowIndex;
+                    if (!selected_rows.Contains(row))
+                    {
+                        selected_rows.Add(row);
+                    }
+                }
+                foreach (int row in selected_rows)
+                {
+                    int box_x = Convert.ToInt32(dgv_Data[1, row].Value);
+                    int box_y = Convert.ToInt32(dgv_Data[2, row].Value);
+                    if (!globals.selected_box.Contains(box_x + box_y * globals.sys_data.header.map_x)) //Violating DRY here a bit, but it's not that big a deal. This is only the first copy.
+                    {
+                        int add_index = box_x + box_y * globals.sys_data.header.map_x;
+                        globals.selected_box.Add(add_index);
+                        globals.selected_box_x.Add(box_x);
+                        globals.selected_box_y.Add(box_y);
+                        AddRowToDataGridView(globals.selected_box.IndexOf(add_index));
+                    }
+                }
+                Invalidate();
+            }
         }
 
-        private void cb_Subtype_SelectedIndexChanged(object sender, EventArgs e)
+        private void FailEdit(DataGridViewCellValidatingEventArgs e)
         {
-            BuildDataGridView(); 
+            dgv_Data.CancelEdit();
+            dgv_Data.RefreshEdit();
+            lb_Error.Visible = true;
+            lb_Error.Text = "Value in row " + e.RowIndex.ToString() + ", column " + e.ColumnIndex.ToString() + " not updated due to invalid value.";
         }
+
+        //Break this out into its own function, as it's called from a few spots.
         private void BuildDataGridView()
         {
             dgv_Data.Columns.Clear();
@@ -206,17 +340,23 @@ namespace EtrianMap
             if (rb_Sys.Checked == true) //SYS is selected.
             {
                 cb_Subtype.Visible = true;
-                if (cb_Type.SelectedIndex == 0) //"Tiles" is selected.
+                if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Tiles) //"Tiles" is selected.
                 {
                     cb_Subtype.Visible = true;
                     dgv_Data.Columns.Add("x", "X"); //I feel like this could be better looking with a for loop and pre-made arrays, but I find this a bit easier to follow.
                     dgv_Data.Columns[0].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[0].ReadOnly = true;
                     dgv_Data.Columns.Add("y", "Y");
                     dgv_Data.Columns[1].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[1].ReadOnly = true;
                     dgv_Data.Columns.Add("type", "Type");
                     dgv_Data.Columns[2].Width = COLUMN_WIDTH_MEDIUM;
-                    dgv_Data.Columns.Add("id", "ID");
+                    dgv_Data.Columns[2].ValueType = typeof(byte);
+                    dgv_Data.Columns[2].ReadOnly = false;
+                    dgv_Data.Columns.Add("value", "Value");
                     dgv_Data.Columns[3].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[3].ReadOnly = false;
+
                     for (int x = 0; x < globals.selected_box.Count; x++)
                     {
                         dgv_Data.Rows.Add(
@@ -227,58 +367,174 @@ namespace EtrianMap
                         );
                     }
                 }
-                else if (cb_Type.SelectedIndex == 1) //"Objects" is selected.
+                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Objects) //"Objects" is selected.
                 {
-
-                }
-                else if (cb_Type.SelectedIndex == 2) //"Encounters" is selected.
-                {
-                    cb_Subtype.Visible = true;
-                    if (cb_Subtype.SelectedIndex == 0)
+                    dgv_Data.Columns.Add("entry", "Entry");
+                    dgv_Data.Columns[0].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[0].ReadOnly = true;
+                    dgv_Data.Columns.Add("x", "X"); //X and Y are not arranged this way internally, but doing it like this keeps it consistent on the UI. Be careful about this.
+                    dgv_Data.Columns[1].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[1].ReadOnly = false;
+                    dgv_Data.Columns.Add("y", "Y");
+                    dgv_Data.Columns[2].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[2].ReadOnly = false;
+                    dgv_Data.Columns.Add("gfx", "Model");
+                    dgv_Data.Columns[3].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[3].ReadOnly = false;
+                    dgv_Data.Columns.Add("unk1", "Unknown 1"); //0x3
+                    dgv_Data.Columns[4].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[4].ReadOnly = false;
+                    dgv_Data.Columns.Add("unk2", "Unknown 2"); //0x4
+                    dgv_Data.Columns[5].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[5].ReadOnly = false;
+                    dgv_Data.Columns.Add("unk3", "Unknown 3"); //0x7
+                    dgv_Data.Columns[6].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[6].ReadOnly = false;
+                    dgv_Data.Columns.Add("ad1", "Direction 1");
+                    dgv_Data.Columns[7].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[7].ReadOnly = false;
+                    dgv_Data.Columns.Add("ad2", "Direction 2");
+                    dgv_Data.Columns[8].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[8].ReadOnly = false;
+                    dgv_Data.Columns.Add("ad3", "Direction 3");
+                    dgv_Data.Columns[9].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[9].ReadOnly = false;
+                    dgv_Data.Columns.Add("ad4", "Direction 4");
+                    dgv_Data.Columns[10].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[10].ReadOnly = false;
+                    for (int x = 0; x < globals.sys_data.tile_objects.Count; x++)
                     {
-                        dgv_Data.Columns.Add("x", "X");
-                        dgv_Data.Columns[0].Width = COLUMN_WIDTH_NARROW;
-                        dgv_Data.Columns.Add("y", "Y");
-                        dgv_Data.Columns[1].Width = COLUMN_WIDTH_NARROW;
-                        dgv_Data.Columns.Add("eid", "Encounter");
-                        dgv_Data.Columns[2].Width = COLUMN_WIDTH_MEDIUM;
-                        dgv_Data.Columns.Add("danger", "Danger");
-                        dgv_Data.Columns[3].Width = COLUMN_WIDTH_MEDIUM;
-                        dgv_Data.Columns.Add("unk1", "Unk. 1");
-                        dgv_Data.Columns[4].Width = COLUMN_WIDTH_MEDIUM;
-                        dgv_Data.Columns.Add("unk2", "Unk. 2");
-                        dgv_Data.Columns[5].Width = COLUMN_WIDTH_MEDIUM;
-                        for (int x = 0; x < globals.selected_box.Count; x++)
+                        if (globals.sys_data.tile_objects[x].type == cb_Subtype.SelectedIndex + 0xD)
                         {
                             dgv_Data.Rows.Add(
-                                globals.selected_box_x[x],
-                                globals.selected_box_y[x],
-                                globals.sys_data.encounters[globals.selected_box[x]].encounter_id,
-                                globals.sys_data.encounters[globals.selected_box[x]].danger,
-                                globals.sys_data.encounters[globals.selected_box[x]].unknown_1,
-                                globals.sys_data.encounters[globals.selected_box[x]].unknown_2
+                                globals.sys_data.tile_objects[x].id,
+                                globals.sys_data.tile_objects[x].map_x,
+                                globals.sys_data.tile_objects[x].map_y,
+                                globals.sys_data.tile_objects[x].graphic,
+                                globals.sys_data.tile_objects[x].unknown_1,
+                                globals.sys_data.tile_objects[x].unknown_2,
+                                globals.sys_data.tile_objects[x].unknown_3,
+                                globals.sys_data.tile_objects[x].activation_direction_1,
+                                globals.sys_data.tile_objects[x].activation_direction_2,
+                                globals.sys_data.tile_objects[x].activation_direction_3,
+                                globals.sys_data.tile_objects[x].activation_direction_4
+
                             );
                         }
+                    }
+                }
+                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Objects) //"Objects" is selected.
+                {
+                    if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.Doors)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.Staircases)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.Chests)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.TwoWays)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.OneWays)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.Doodads)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.Pits)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.Poles)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.Unknown)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.Currents)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.MovingPlatforms)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.ScriptedEvents)
+                    {
+
+                    }
+                    else if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.RisingPlatforms)
+                    {
+
+                    }
+                }
+                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Encounters) //"Encounters" is selected.
+                {
+                    cb_Subtype.Visible = true;
+                    dgv_Data.Columns.Add("x", "X");
+                    dgv_Data.Columns[0].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[0].ReadOnly = true;
+                    dgv_Data.Columns.Add("y", "Y");
+                    dgv_Data.Columns[1].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[1].ReadOnly = true;
+                    dgv_Data.Columns.Add("eid", "Encounter");
+                    dgv_Data.Columns[2].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[2].ReadOnly = false;
+                    dgv_Data.Columns.Add("danger", "Danger");
+                    dgv_Data.Columns[3].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[3].ReadOnly = false;
+                    dgv_Data.Columns.Add("unk1", "Unk. 1");
+                    dgv_Data.Columns[4].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[4].ReadOnly = false;
+                    dgv_Data.Columns.Add("unk2", "Unk. 2");
+                    dgv_Data.Columns[5].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[5].ReadOnly = false;
+                    for (int x = 0; x < globals.selected_box.Count; x++)
+                    {
+                        dgv_Data.Rows.Add(
+                            globals.selected_box_x[x],
+                            globals.selected_box_y[x],
+                            globals.sys_data.encounters[globals.selected_box[x]].encounter_id,
+                            globals.sys_data.encounters[globals.selected_box[x]].danger,
+                            globals.sys_data.encounters[globals.selected_box[x]].unknown_1,
+                            globals.sys_data.encounters[globals.selected_box[x]].unknown_2
+                        );
                     }
                 }
             }
             else if (rb_Gfx.Checked == true) //GFX is selected.
             {
-                if (cb_Type.SelectedIndex == 0) //This is a slightly unreliable way to do this if the values in the control box change.
+                if (cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Layers)
                 {
                     cb_Subtype.Visible = true;
                     dgv_Data.Columns.Add("x", "X");
                     dgv_Data.Columns[0].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[0].ReadOnly = true;
                     dgv_Data.Columns.Add("y", "Y");
                     dgv_Data.Columns[1].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[1].ReadOnly = true;
                     dgv_Data.Columns.Add("gid", "Graphic");
                     dgv_Data.Columns[2].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[2].ReadOnly = false;
                     dgv_Data.Columns.Add("rtn", "Rotation");
                     dgv_Data.Columns[3].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[3].ReadOnly = false;
                     dgv_Data.Columns.Add("unk1", "Unk. 1");
                     dgv_Data.Columns[4].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[4].ReadOnly = false;
                     dgv_Data.Columns.Add("unk2", "Unk. 2");
                     dgv_Data.Columns[5].Width = COLUMN_WIDTH_MEDIUM;
+                    dgv_Data.Columns[5].ReadOnly = false;
                     for (int x = 0; x < globals.selected_box.Count; x++)
                     {
                         dgv_Data.Rows.Add(
@@ -291,27 +547,36 @@ namespace EtrianMap
                         );
                     }
                 }
-                else if (cb_Type.SelectedIndex == 1)
+                else if (cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Filenames)
                 {
                     cb_Subtype.Visible = false;
                     dgv_Data.Columns.Add("id", "ID");
                     dgv_Data.Columns[0].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[0].ReadOnly = true;
                     dgv_Data.Columns.Add("fn1", "Filename 1");
                     dgv_Data.Columns[1].Width = COLUMN_WIDTH_WIDE;
+                    dgv_Data.Columns[1].ReadOnly = false;
                     dgv_Data.Columns.Add("rot1", "Angle");
                     dgv_Data.Columns[2].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[2].ReadOnly = false;
                     dgv_Data.Columns.Add("Filename 2", "Filename 2");
                     dgv_Data.Columns[3].Width = COLUMN_WIDTH_WIDE;
+                    dgv_Data.Columns[3].ReadOnly = false;
                     dgv_Data.Columns.Add("rot2", "Angle");
                     dgv_Data.Columns[4].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[4].ReadOnly = false;
                     dgv_Data.Columns.Add("fn3", "Filename 3");
                     dgv_Data.Columns[5].Width = COLUMN_WIDTH_WIDE;
+                    dgv_Data.Columns[5].ReadOnly = false;
                     dgv_Data.Columns.Add("rot3", "Angle");
                     dgv_Data.Columns[6].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[6].ReadOnly = false;
                     dgv_Data.Columns.Add("fn4", "Filename 4");
                     dgv_Data.Columns[7].Width = COLUMN_WIDTH_WIDE;
+                    dgv_Data.Columns[7].ReadOnly = false;
                     dgv_Data.Columns.Add("rot4", "Angle");
                     dgv_Data.Columns[8].Width = COLUMN_WIDTH_NARROW;
+                    dgv_Data.Columns[8].ReadOnly = false;
                     for (int x = 0; x < globals.gfx_data.indices.Count; x++)
                     {
                         dgv_Data.Rows.Add(
@@ -325,12 +590,14 @@ namespace EtrianMap
                 }
             }
         }
+
+        //Instead of redrawing the whole DataGridView, have a function for adding to it.
         private void AddRowToDataGridView(int offset)
         {
             if (rb_Sys.Checked == true)
             {
                 cb_Subtype.Visible = true;
-                if (cb_Type.SelectedIndex == 0)
+                if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Tiles)
                 {
                     dgv_Data.Rows.Add(
                         globals.selected_box_x[offset],
@@ -339,28 +606,21 @@ namespace EtrianMap
                         globals.sys_data.behaviour_tiles[cb_Subtype.SelectedIndex][globals.selected_box[offset]].id
                     );
                 }
-                else if (cb_Type.SelectedIndex == 1)
+                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Encounters)
                 {
-
-                }
-                else if (cb_Type.SelectedIndex == 2)
-                {
-                    if (cb_Subtype.SelectedIndex == 0)
-                    {
-                        dgv_Data.Rows.Add(
-                            globals.selected_box_x[offset],
-                            globals.selected_box_y[offset],
-                            globals.sys_data.encounters[globals.selected_box[offset]].encounter_id,
-                            globals.sys_data.encounters[globals.selected_box[offset]].danger,
-                            globals.sys_data.encounters[globals.selected_box[offset]].unknown_1,
-                            globals.sys_data.encounters[globals.selected_box[offset]].unknown_2
-                        );
-                    }
+                    dgv_Data.Rows.Add(
+                        globals.selected_box_x[offset],
+                        globals.selected_box_y[offset],
+                        globals.sys_data.encounters[globals.selected_box[offset]].encounter_id,
+                        globals.sys_data.encounters[globals.selected_box[offset]].danger,
+                        globals.sys_data.encounters[globals.selected_box[offset]].unknown_1,
+                        globals.sys_data.encounters[globals.selected_box[offset]].unknown_2
+                    );
                 }
             }
             else
             {
-                if (cb_Type.SelectedIndex == 0) //This is a slightly unreliable way to do this if the values in the control box change.
+                if (cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Layers)
                 {
                     cb_Subtype.Visible = true;
                     if (globals.selected_box.Count > 0)
@@ -378,9 +638,70 @@ namespace EtrianMap
                 }
             }
         }
+
+        //This could probably be embedded into places where it's called, but I'm making it its own function in case I want to expand it.
         private void RemoveRowFromDataGridView(int offset)
         {
             dgv_Data.Rows.Remove(dgv_Data.Rows[offset]);
+        }
+
+        //This creates the list of all encounts used by the encount view display.
+        private Dictionary<int, int> BuildEncountList()
+        {
+            Dictionary<int, int> encounts = new Dictionary<int, int>();
+            for (int x = 0; x < globals.sys_data.encounters.Count; x++)
+            {
+                int group = globals.sys_data.encounters[x].encounter_id;
+                if (!encounts.ContainsKey(group))
+                {
+                    encounts.Add(group, encounts.Count); //The group needs to be the key so it's easy to get the offset we need for the colour array.
+                }
+            }
+            return encounts;
+        }
+        static private (bool success, object value) TypeValidator(string val, VALIDATOR_TYPES type) //Fairly sure I'm not supposed to be using object like this.
+        {
+            if (type == VALIDATOR_TYPES.u8)
+            {
+                bool success = Byte.TryParse(val, out byte result);
+                return (success, result);
+            }
+            else if (type == VALIDATOR_TYPES.s8)
+            {
+                bool success = SByte.TryParse(val, out sbyte result);
+                return (success, result);
+            }
+            else if (type == VALIDATOR_TYPES.u16)
+            {
+                bool success = ushort.TryParse(val, out ushort result);
+                return (success, result);
+            }
+            else if (type == VALIDATOR_TYPES.s16)
+            {
+                bool success = short.TryParse(val, out short result);
+                return (success, result);
+            }
+            else if (type == VALIDATOR_TYPES.u32)
+            {
+                bool success = uint.TryParse(val, out uint result);
+                return (success, result);
+            }
+            else if (type == VALIDATOR_TYPES.s32)
+            {
+                bool success = int.TryParse(val, out int result);
+                return (success, result);
+            }
+            else if (type == VALIDATOR_TYPES.str)
+            {
+                if (val.Length <= 0x20)
+                {
+                    if (System.Text.Encoding.UTF8.GetByteCount(val) == val.Length) //Checks for the presence of non-ASCII characters
+                    {
+                        return (true, val);
+                    }
+                }
+            }
+            return (false, 0);
         }
     }
 }

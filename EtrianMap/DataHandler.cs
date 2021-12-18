@@ -692,10 +692,6 @@ namespace EtrianMap
                 int filename_size = indices * 0x94; //Number of tile file name indices in the file.
                 int gfx_size = gfx_header_size + layer_ptr_size + total_layer_size + filename_size; //Add all sizes together.
                 byte[] gfx_save_byte = new byte[gfx_size];
-                Debug.WriteLine(Convert.ToString(layer_ptr_size, 16));
-                Debug.WriteLine(Convert.ToString(total_layer_size, 16));
-                Debug.WriteLine(Convert.ToString(filename_size, 16));
-                Debug.WriteLine(Convert.ToString(gfx_size, 16));
 
                 //Create the header array.
                 int[] gfx_header = new int[gfx_header_size / 4];
