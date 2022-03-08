@@ -14,7 +14,7 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 using OriginTablets.Types;
 
 namespace EtrianMap
-{
+{ 
     public partial class EtrianMap : Form
     {
         //Constants that are used in the main form's UI.
@@ -185,9 +185,9 @@ namespace EtrianMap
             {
                 if (ModifierKeys != Keys.Control)
                 {
-                    if (rb_Sys.Checked && (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Tiles || cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Encounters || cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Layers))
+                    if ((rb_Sys.Checked && (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Tiles || cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Encounters)) || (rb_Gfx.Checked && (cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Layers)))
                     {
-                        dgv_Data.Rows.Clear(); //Some views don't want to clear the rows here.
+                        dgv_Data.Rows.Clear(); //SYS Tiles, SYS Encounters, and GFX Layers should not be cleared here.
                     }
                     globals.selected_box.Clear(); //Make sure we clear the rows before clearing the selection boxes or else we'll mess it up.
                     globals.selected_box_x.Clear();
@@ -255,37 +255,176 @@ namespace EtrianMap
             }
         }
 
-        //Update values upon input.
-        private void dgv_Data_CellValidating(object sender, DataGridViewCellValidatingEventArgs e) //Making sure the data we enter is value.
+        //Update values upon input. I'm using column and row indexes here, which is probably not a good idea if those indexes ever change. Find a better way?
+        private void dgv_Data_CellValidating(object sender, DataGridViewCellValidatingEventArgs e) //Making sure the data we enter is valid.
         {
             if (rb_Sys.Checked == true) //SYS is selected.
             {
                 if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Tiles) //"Tiles" is selected.
                 {
-                    if (e.ColumnIndex == 2) //Type
+                    (bool, object) result = TypeValidator(e.FormattedValue.ToString(), VALIDATOR_TYPES.u8); //u8 types
+                    if (result.Item1 == true) //Using an if statement because there are only two values.
                     {
-                        (bool, object) result = TypeValidator(e.FormattedValue.ToString(), VALIDATOR_TYPES.u8);
-                        if (result.Item1 == true)
+                        if (e.ColumnIndex == 2) //Type
                         {
-                            Debug.WriteLine(e.RowIndex);
                             globals.sys_data.behaviour_tiles[cb_Subtype.SelectedIndex][globals.selected_box[e.RowIndex]].type = (byte)result.Item2;
                         }
-                        else
+                        else if (e.ColumnIndex == 3) //ID
                         {
-                            FailEdit(e);
-                        }
-                    }
-                    else if (e.ColumnIndex == 3) //Type
-                    {
-                        (bool, object) result = TypeValidator(e.FormattedValue.ToString(), VALIDATOR_TYPES.u8);
-                        if (result.Item1 == true)
-                        {
-                            Debug.WriteLine(e.RowIndex);
                             globals.sys_data.behaviour_tiles[cb_Subtype.SelectedIndex][globals.selected_box[e.RowIndex]].id = (byte)result.Item2;
                         }
-                        else
+                    }
+                    else
+                    {
+                        FailEdit(e);
+                    }
+                }
+                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Objects) //"Objects" is selected.
+                {
+                    (bool, object) result = TypeValidator(e.FormattedValue.ToString(), VALIDATOR_TYPES.u8);
+                    if (result.Item1 == true)
+                    {
+                        Debug.WriteLine(e.RowIndex);
+                        switch (e.ColumnIndex)
                         {
-                            FailEdit(e);
+                            case 1:
+                                globals.sys_data.tile_objects[e.RowIndex].map_x = (byte)result.Item2;
+                                break;
+                            case 2:
+                                globals.sys_data.tile_objects[e.RowIndex].map_y = (byte)result.Item2;
+                                break;
+                            case 3:
+                                globals.sys_data.tile_objects[e.RowIndex].graphic = (byte)result.Item2;
+                                break;
+                            case 4:
+                                globals.sys_data.tile_objects[e.RowIndex].unknown_1 = (byte)result.Item2;
+                                break;
+                            case 5:
+                                globals.sys_data.tile_objects[e.RowIndex].unknown_2 = (byte)result.Item2;
+                                break;
+                            case 6:
+                                globals.sys_data.tile_objects[e.RowIndex].unknown_3 = (byte)result.Item2;
+                                break;
+                            case 7:
+                                globals.sys_data.tile_objects[e.RowIndex].activation_direction_1 = (byte)result.Item2;
+                                break;
+                            case 8:
+                                globals.sys_data.tile_objects[e.RowIndex].activation_direction_2 = (byte)result.Item2;
+                                break;
+                            case 9:
+                                globals.sys_data.tile_objects[e.RowIndex].activation_direction_3 = (byte)result.Item2;
+                                break;
+                            case 10:
+                                globals.sys_data.tile_objects[e.RowIndex].activation_direction_4 = (byte)result.Item2;
+                                break;
+                            default: //Should never come here.
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        FailEdit(e);
+                    }
+                }
+                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.TileData) //"Objects" is selected.
+                {
+                    //I've honestly forgotten what TileData was supposed to be... oops.
+                }
+                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Encounters) //"Encounters" is selected.
+                {
+                    (bool, object) result = TypeValidator(e.FormattedValue.ToString(), VALIDATOR_TYPES.u16);
+                    if (result.Item1 == true)
+                    {
+                        Debug.WriteLine(e.RowIndex);
+                        switch (e.ColumnIndex)
+                        {
+                            case 2:
+                                globals.sys_data.encounters[globals.selected_box_x[e.RowIndex] + (globals.selected_box_y[e.RowIndex] * globals.sys_data.header.map_x)].encounter_id = (ushort)result.Item2;
+                                break;
+                            case 3:
+                                globals.sys_data.encounters[globals.selected_box_x[e.RowIndex] + (globals.selected_box_y[e.RowIndex] * globals.sys_data.header.map_x)].danger = (ushort)result.Item2;
+                                break;
+                            case 4:
+                                globals.sys_data.encounters[globals.selected_box_x[e.RowIndex] + (globals.selected_box_y[e.RowIndex] * globals.sys_data.header.map_x)].unknown_1 = (ushort)result.Item2;
+                                break;
+                            case 5:
+                                globals.sys_data.encounters[globals.selected_box_x[e.RowIndex] + (globals.selected_box_y[e.RowIndex] * globals.sys_data.header.map_x)].unknown_2 = (ushort)result.Item2;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+            else if (rb_Gfx.Checked == true) //GFX is selected.
+            {
+                if (cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Layers) //"Layers" is selected.
+                {
+                    (bool, object) result = TypeValidator(e.FormattedValue.ToString(), VALIDATOR_TYPES.u8);
+                    if (result.Item1 == true)
+                    {
+                        Debug.WriteLine(e.RowIndex);
+                        switch (e.ColumnIndex)
+                        {
+                            case 2:
+                                globals.gfx_data.layer_tiles[cb_Subtype.SelectedIndex][globals.selected_box[e.RowIndex]].id = (byte)result.Item2;
+                                break;
+                            case 3:
+                                globals.gfx_data.layer_tiles[cb_Subtype.SelectedIndex][globals.selected_box[e.RowIndex]].rotation = (byte)result.Item2;
+                                break;
+                            case 4:
+                                globals.gfx_data.layer_tiles[cb_Subtype.SelectedIndex][globals.selected_box[e.RowIndex]].unknown_1 = (byte)result.Item2;
+                                break;
+                            case 5:
+                                globals.gfx_data.layer_tiles[cb_Subtype.SelectedIndex][globals.selected_box[e.RowIndex]].unknown_2 = (byte)result.Item2;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+                else if (cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Filenames) //"Filenames" is selected.
+                {
+                    (bool, object) result;
+                    if ((e.ColumnIndex & 1) == 0) //If the column is even, it's a number. This is a fairly hacky way to do it.
+                    {
+                        result = TypeValidator(e.FormattedValue.ToString(), VALIDATOR_TYPES.u8);
+                    }
+                    else
+                    {
+                        result = TypeValidator(e.FormattedValue.ToString(), VALIDATOR_TYPES.str);
+                    }
+                    if (result.Item1 == true)
+                    {
+                        Debug.WriteLine(e.RowIndex);
+                        switch (e.ColumnIndex)
+                        {
+                            case 1:
+                                globals.gfx_data.indices[e.RowIndex].file_1 = (string)result.Item2;
+                                break;
+                            case 2:
+                                globals.gfx_data.indices[e.RowIndex].file_1_rotation = (byte)result.Item2;
+                                break;
+                            case 3:
+                                globals.gfx_data.indices[e.RowIndex].file_2 = (string)result.Item2;
+                                break;
+                            case 4:
+                                globals.gfx_data.indices[e.RowIndex].file_2_rotation = (byte)result.Item2;
+                                break;
+                            case 5:
+                                globals.gfx_data.indices[e.RowIndex].file_3 = (string)result.Item2;
+                                break;
+                            case 6:
+                                globals.gfx_data.indices[e.RowIndex].file_3_rotation = (byte)result.Item2;
+                                break;
+                            case 7:
+                                globals.gfx_data.indices[e.RowIndex].file_4 = (string)result.Item2;
+                                break;
+                            case 8:
+                                globals.gfx_data.indices[e.RowIndex].file_4_rotation = (byte)result.Item2;
+                                break;
+                            default:
+                                break;
                         }
                     }
                 }
@@ -293,7 +432,7 @@ namespace EtrianMap
         }
         private void dgv_Data_CellEnter(object sender, DataGridViewCellEventArgs e) //This is used for types that display map-wide lists of values rather than individual cell values.
         {
-            if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Objects) //"Objects" is selected.
+            if (rb_Sys.Checked && cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Objects) //"Objects" is selected.
             {
                 List<int> selected_rows = new List<int>();
                 globals.selected_box.Clear();
@@ -321,6 +460,10 @@ namespace EtrianMap
                     }
                 }
                 Invalidate();
+            }
+            else if (rb_Gfx.Checked && cb_Type.SelectedIndex == (int)GFX_SELECTIONS.Filenames) //"Filenames" is selected.
+            {
+
             }
         }
 
@@ -423,7 +566,7 @@ namespace EtrianMap
                         }
                     }
                 }
-                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Objects) //"Objects" is selected.
+                else if (cb_Type.SelectedIndex == (int)SYS_SELECTIONS.Objects) //"Objects" is selected. These will be filled on a case-by-case basis.
                 {
                     if (cb_Subtype.SelectedIndex == (int)SYS_TILES_SELECTIONS.Doors)
                     {
@@ -695,7 +838,7 @@ namespace EtrianMap
             {
                 if (val.Length <= 0x20)
                 {
-                    if (System.Text.Encoding.UTF8.GetByteCount(val) == val.Length) //Checks for the presence of non-ASCII characters
+                    if (System.Text.Encoding.UTF8.GetByteCount(val) == val.Length) //Checks for the presence of non-ASCII characters.
                     {
                         return (true, val);
                     }

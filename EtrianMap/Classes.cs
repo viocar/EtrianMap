@@ -287,9 +287,20 @@ namespace EtrianMap
                 {
                     p_file_1 = value.Substring(0, 0x20);
                 }
+                else if (value.Length == 0)
+                {
+                    p_file_1 = "\x0";
+                }
                 else
                 {
-                    p_file_1 = value.Remove(value.IndexOf('\x0'));
+                    if (value.Contains('\x0'))
+                    {
+                        p_file_1 = value.Remove(value.IndexOf('\x0'));
+                    }
+                    else
+                    {
+                        p_file_1 = value;
+                    }
                 }
             }
         }
@@ -306,9 +317,20 @@ namespace EtrianMap
                 {
                     p_file_2 = value.Substring(0, 0x20);
                 }
+                else if (value.Length == 0)
+                {
+                    p_file_2 = "\x0";
+                }
                 else
                 {
-                    p_file_2 = value.Remove(value.IndexOf('\x0'));
+                    if (value.Contains('\x0'))
+                    {
+                        p_file_2 = value.Remove(value.IndexOf('\x0'));
+                    }
+                    else 
+                    {
+                        p_file_2 = value;
+                    }
                 }
             }
         }
@@ -325,9 +347,20 @@ namespace EtrianMap
                 {
                     p_file_3 = value.Substring(0, 0x20);
                 }
+                else if (value.Length == 0)
+                {
+                    p_file_3 = "\x0";
+                }
                 else
                 {
-                    p_file_3 = value.Remove(value.IndexOf('\x0'));
+                    if (value.Contains('\x0'))
+                    {
+                        p_file_3 = value.Remove(value.IndexOf('\x0'));
+                    }
+                    else
+                    {
+                        p_file_3 = value;
+                    }
                 }
             }
         }
@@ -344,9 +377,20 @@ namespace EtrianMap
                 {
                     p_file_4 = value.Substring(0, 0x20);
                 }
+                else if (value.Length == 0)
+                {
+                    p_file_4 = "\x0";
+                }
                 else
                 {
-                    p_file_4 = value.Remove(value.IndexOf('\x0'));
+                    if (value.Contains('\x0'))
+                    {
+                        p_file_4 = value.Remove(value.IndexOf('\x0'));
+                    }
+                    else
+                    {
+                        p_file_4 = value;
+                    }
                 }
             }
         }
